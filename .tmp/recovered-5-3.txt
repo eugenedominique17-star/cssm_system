@@ -1,0 +1,268 @@
+1: import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+2: import API from '../api/axios';
+3: 
+4: const AuthContext = createContext(null);
+5: 
+6: export const useAuth = () => useContext(AuthContext);
+7: 
+8: const normalizeUser = (userData) => {
+9:   if (!userData) return null;
+10: 
+11:   const normalizedRole = String(userData.role || '').toLowerCase();
+12: 
+13:   return {
+14:     ...userData,
+15:     role: normalizedRole === 'user' ? 'client' : normalizedRole
+16:   };
+17: };
+18: 
+19: export const AuthProvider = ({ children }) => {
+20:   const [user, setUser] = useState(null);
+21:   const [loading, setLoading] = useState(true);
+22: 
+23:   useEffect(() => {
+24:     const token = localStorage.getItem('token');
+25:     const storedUser = localStorage.getItem('user');
+26: 
+27:     if (token && storedUser) {
+28:       try {
+29:         setUser(normalizeUser(JSON.parse(storedUser)));
+30:       } catch (error) {
+31:         console.error('Failed to restore saved user session:', error);
+32:         localStorage.removeItem('token');
+33:         localStorage.removeItem('user');
+34:       }
+35:     }
+36: 
+37:     setLoading(false);
+38:   }, []);
+39: 
+40:   const login = async (identifier, password) => {
+41:     const response = await API.post('/auth/login', { identifier, password });
+42:     const { token, user: userData } = response.data;
+43:     const normalizedUser = normalizeUser(userData);
+44:     localStorage.setItem('token', token);
+45:     localStorage.setItem('user', JSON.stringify(normalizedUser));
+46:     setUser(normalizedUser);
+47:     return normalizedUser;
+48:   };
+49: 
+50:   const logout = () => {
+51:     localStorage.removeItem('token');
+52:     localStorage.removeItem('user');
+53: 
+54:     Object.keys(localStorage).forEach((key) => {
+55:       if (key.startsWith('storehub-cart-')) {
+56:         localStorage.removeItem(key);
+57:       }
+58:     });
+59: 
+60:     setUser(null);
+61:   };
+62: 
+63:   const updateUser = useCallback((userData) => {
+64:     const normalizedUser = normalizeUser(userData);
+65:     localStorage.setItem('user', JSON.stringify(normalizedUser));
+66:     setUser(normalizedUser);
+67:   }, []);
+68: 
+69:   const isAuthenticated = !!user;
+70:   const isAdmin = user?.role === 'admin';
+71:   const isStaff = user?.role === 'staff';
+72:   const isClient = user?.role === 'client';
+73: 
+74:   return (
+75:     <AuthContext.Provider value={{
+76:       user,
+77:       login,
+78:       logout,
+79:       updateUser,
+80:       isAuthenticated,
+81:       isAdmin,
+82:       isStaff,
+83:       isClient,
+84:       loading
+85:     }}>
+86:       {children}
+87:     </AuthContext.Provider>
+88:   );
+89: };
+90: 
+91: export default AuthContext;
+92: 
+1: import React from 'react';
+2: import { Routes, Route, useLocation } from 'react-router-dom';
+3: import { Box } from '@mui/material';
+4: import { Analytics } from '@vercel/analytics/react';
+5: import { SpeedInsights } from '@vercel/speed-insights/react';
+6: 
+7: import Navbar from './components/Navbar';
+8: import ProtectedRoute from './components/ProtectedRoute';
+9: import DashboardLayout from './components/DashboardLayout';
+10: 
+11: // Public pages
+12: import Homepage from './pages/public/Homepage';
+13: import Login from './pages/public/Login';
+14: import LoginAdmin from './pages/public/LoginAdmin';
+15: import LoginStaff from './pages/public/LoginStaff';
+16: import LoginClient from './pages/public/LoginClient';
+17: import RegisterClient from './pages/public/RegisterClient';
+18: 
+19: import ChangePassword, {
+20:   ChangePasswordSuccess,
+21: } from './pages/public/ChangePassword';
+22: 
+23: // Admin pages
+24: import AdminDashboard from './pages/admin/Dashboard';
+25: import AuditLogs from './pages/admin/AuditLogs';
+26: import BodegaInventory from './pages/staff/BodegaInventory';
+27: import AccountManagement from './pages/admin/AccountManagement';
+28: import ClientApprovals from './pages/admin/ClientApprovals';
+29: import StaffApprovals from './pages/admin/StaffApprovals';
+30: import SubmissionApprovals from './pages/admin/SubmissionApprovals';
+31: import Reports from './pages/admin/Reports';
+32: import ProductMonitor from './pages/admin/ProductMonitor';
+33: 
+34: // Staff pages
+35: import StaffDashboard from './pages/staff/Dashboard';
+36: import ProductManagement from './pages/staff/ProductManagement';
+37: import ReceiptManagement from './pages/staff/ReceiptManagement';
+38: import PromoManagement from './pages/staff/PromoManagement';
+39: import UserManagement from './pages/staff/UserManagement';
+40: import StaffSubmissions from './pages/staff/Submissions';
+41: 
+42: // Client/User pages
+43: import UserDashboard from './pages/user/Dashboard';
+44: import OrderHistory from './pages/user/OrderHistory';
+45: import Profile from './pages/user/Profile';
+46: import Favorites from './pages/user/Favorites';
+47: 
+48: function App() {
+49:   const location = useLocation();
+50: 
+51:   // Detect dashboard routes
+52:   const isDashboardRoute = /^(\/admin|\/staff|\/client)\//.test(
+53:     location.pathname
+54:   );
+55:   const isHomeRoute = location.pathname === '/';
+56:   const isLoginRoute = location.pathname === '/login';
+57:   const isRegisterClientRoute = location.pathname === '/register/client';
+58: 
+59:   // Reusable protected dashboard wrapper
+60:   const dashboardPage = (page, roles) => (
+61:     <ProtectedRoute allowedRoles={roles}>
+62:       <DashboardLayout>{page}</DashboardLayout>
+63:     </ProtectedRoute>
+64:   );
+65: 
+66:   return (
+67:     <>
+68:       <Box
+69:         sx={{
+70:           display: 'flex',
+71:           flexDirection: 'column',
+72:           minHeight: '100vh',
+73:         }}
+74:       >
+75:         {/* ========================================
+76:             PUBLIC NAVBAR
+77:             Hidden on Admin / Staff / Client pages
+78:         ======================================== */}
+79:         {!isDashboardRoute && !isHomeRoute && !isLoginRoute && !isRegisterClientRoute && <Navbar />}
+80: 
+81:         {/* ========================================
+82:             MAIN CONTENT
+83:         ======================================== */}
+84:         <Box
+85:           component="main"
+86:           sx={{
+87:             flex: 1,
+88:             display: 'flex',
+89:             flexDirection: 'column',
+90:             width: '100%',
+91:           }}
+92:         >
+93:           <Routes>
+94:           {/* =====================================
+95:               PUBLIC ROUTES
+96:           ===================================== */}
+97: 
+98:           <Route
+99:             path="/"
+100:             element={<Homepage />}
+101:           />
+102: 
+103:           <Route
+104:             path="/login"
+105:             element={<Login />}
+106:           />
+107: 
+108:           <Route
+109:             path="/login/admin"
+110:             element={<LoginAdmin />}
+80: );
+81: 
+82: const Reports = () => {
+83:   const { user } = useAuth();
+84:   const [period, setPeriod] = useState('monthly');
+85:   const [month, setMonth] = useState(() => dateValue(new Date()).slice(0, 7));
+86:   const [range, setRange] = useState(initialRange);
+87:   const [reports, setReports] = useState(null);
+88:   const [loading, setLoading] = useState(true);
+89:   const [error, setError] = useState('');
+90: 
+91:   const invalidMonth = period === 'monthly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month);
+92:   const invalidRange = period === 'custom' && (!range.start || !range.end || range.start > range.end);
+93:   const monthLabel = invalidMonth ? 'Selected month' : new Date(`${month}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+94:   const periodLabel = period === 'weekly' ? 'Last 7 days' : period === 'custom' ? `${range.start} – ${range.end}` : monthLabel;
+95:   const groupedLabel = periodLabel;
+96: 
+97:   useEffect(() => {
+98:     if (invalidMonth || invalidRange) {
+99:       setReports(null);
+100:       setLoading(false);
+101:       return undefined;
+102:     }
+103:     let active = true;
+104:     const load = async () => {
+105:       setLoading(true);
+106:       setError('');
+107:       try {
+108:         const trendParams = new URLSearchParams({ period: 'monthly', chart: 'sales_trend' });
+109:         if (period === 'weekly') {
+110:           const end = new Date();
+111:           const start = new Date(end);
+112:           start.setDate(start.getDate() - 6);
+113:           trendParams.set('start_date', dateValue(start));
+114:           trendParams.set('end_date', dateValue(end));
+115:         } else if (period === 'custom') {
+116:           trendParams.set('start_date', range.start);
+117:           trendParams.set('end_date', range.end);
+118:         } else {
+119:           const [year, monthNumber] = month.split('-').map(Number);
+120:           trendParams.set('start_date', `${month}-01`);
+121:           trendParams.set('end_date', `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, '0')}`);
+122:         }
+123:         const groupParams = new URLSearchParams(trendParams);
+124:         groupParams.delete('chart');
+125:         const [trend, category, products] = await Promise.all([
+126:           API.get(`/admin/reports?${trendParams}`),
+127:           API.get(`/admin/reports?${groupParams}&chart=sales_category`),
+128:           API.get(`/admin/reports?${groupParams}&chart=top_products`),
+129:         ]);
+130:         if (active) setReports({ trend: trend.data, category: category.data, products: products.data });
+131:       } catch (fetchError) {
+132:         if (active) {
+133:           setReports(null);
+134:           setError(fetchError.response?.data?.message || 'Could not load sales reports.');
+135:         }
+136:       } finally {
+137:         if (active) setLoading(false);
+138:       }
+139:     };
+140:     load();
+141:     return () => { active = false; };
+142:   }, [period, month, range.start, range.end, invalidMonth, invalidRange]);
+143: 
+144:   const daily = reports?.trend?.data || [];
+145:   const categories = reports?.category?.data || [];

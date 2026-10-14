@@ -1,19 +1,19 @@
 import { createTheme } from '@mui/material/styles';
 
 export const colors = {
-  primary: '#0D9488', // Serene Teal
-  primaryDark: '#0F766E', // Deep Calming Teal
-  primaryLight: '#2DD4BF', // Light Mint Teal
-  secondary: '#F59E0B', // Soft Amber
-  secondaryDark: '#D97706',
-  accent: '#F43F5E', // Muted Rose
-  dark: '#0F172A', // Slate 900
-  bg: '#F8FAFC', // Slate 50 (Very calm off-white)
+  primary: '#087F5B', // Emerald
+  primaryDark: '#066649', // Deep emerald
+  primaryLight: '#8EDDB8', // Mint
+  secondary: '#D8F3E5', // Soft mint
+  secondaryDark: '#B9EBD0',
+  accent: '#087F5B', // Emerald
+  dark: '#183D32', // Forest ink
+  bg: '#F7F5EC', // Cream
   white: '#FFFFFF',
-  textPrimary: '#0F172A', // Slate 900
-  textSecondary: '#475569', // Slate 600
-  lightGray: '#F1F5F9', // Slate 100
-  borderGray: '#E2E8F0', // Slate 200 (Subtle borders)
+  textPrimary: '#183D32',
+  textSecondary: '#4C695A',
+  lightGray: '#EDF3E8',
+  borderGray: '#D5E5D9',
   emerald: '#10B981',
   green: '#10B981',
   orange: '#F59E0B',
@@ -24,20 +24,20 @@ export const colors = {
 
 // Dark mode specific colors
 export const darkColors = {
-  primary: '#0D9488',
-  primaryDark: '#0F766E',
-  primaryLight: '#2DD4BF',
+  primary: '#087F5B',
+  primaryDark: '#066649',
+  primaryLight: '#8EDDB8',
   secondary: '#F59E0B',
   secondaryDark: '#D97706',
   accent: '#F43F5E',
-  dark: '#020617', // Slate 950
-  bg: '#0F172A', // Slate 900
-  paper: '#1E293B', // Slate 800
-  white: '#F8FAFC',
-  textPrimary: '#F8FAFC',
-  textSecondary: '#94A3B8', // Slate 400
-  lightGray: '#334155',
-  borderGray: '#334155',
+  dark: '#0B281E', // Slate 950
+  bg: '#183D32', // Slate 900
+  paper: '#254D3F', // Slate 800
+  white: '#F7F5EC',
+  textPrimary: '#F7F5EC',
+  textSecondary: '#839B8C', // Slate 400
+  lightGray: '#365C4B',
+  borderGray: '#365C4B',
   emerald: '#10B981',
   green: '#10B981',
   orange: '#F59E0B',
@@ -61,8 +61,8 @@ const getTheme = (mode = 'light') => {
       secondary: {
         main: colorScheme.secondary,
         dark: colorScheme.secondaryDark,
-        light: '#FDE68A',
-        contrastText: mode === 'dark' ? '#F8FAFC' : '#0F172A',
+        light: '#EFF9F1',
+        contrastText: mode === 'dark' ? '#F7F5EC' : '#183D32',
       },
       background: {
         default: colorScheme.bg,
@@ -99,6 +99,10 @@ const getTheme = (mode = 'light') => {
       borderRadius: 14,
     },
     components: {
+      MuiSkeleton: {
+        defaultProps: { animation: 'wave' },
+        styleOverrides: { root: { backgroundColor: 'rgba(8,127,91,.08)', borderRadius: 12 } },
+      },
       MuiButton: {
         styleOverrides: {
           root: {
@@ -112,15 +116,15 @@ const getTheme = (mode = 'light') => {
             },
             '&:hover': {
               transform: 'translateY(-1px)',
-              boxShadow: mode === 'dark' ? '0 8px 20px rgba(0,0,0,0.3)' : '0 8px 20px rgba(13, 148, 136, 0.12)',
+              boxShadow: mode === 'dark' ? '0 8px 20px rgba(0,0,0,0.3)' : '0 8px 20px rgba(8,127,91, 0.12)',
             },
           },
           containedPrimary: {
             background: colorScheme.primary,
-            boxShadow: mode === 'dark' ? 'none' : '0 4px 12px rgba(13, 148, 136, 0.15)',
+            boxShadow: mode === 'dark' ? 'none' : '0 4px 12px rgba(8,127,91, 0.15)',
             '&:hover': {
               background: colorScheme.primaryDark,
-              boxShadow: mode === 'dark' ? 'none' : '0 6px 16px rgba(13, 148, 136, 0.25)',
+              boxShadow: mode === 'dark' ? 'none' : '0 6px 16px rgba(8,127,91, 0.25)',
             },
           },
           containedSecondary: {
@@ -135,7 +139,7 @@ const getTheme = (mode = 'light') => {
             borderColor: colorScheme.borderGray,
             '&:hover': {
               borderColor: colorScheme.primary,
-              backgroundColor: `rgba(13, 148, 136, ${mode === 'dark' ? '0.12' : '0.04'})`,
+              backgroundColor: `rgba(8,127,91, ${mode === 'dark' ? '0.12' : '0.04'})`,
             },
           },
         },
@@ -147,7 +151,7 @@ const getTheme = (mode = 'light') => {
             border: `1px solid ${colorScheme.borderGray}`,
             boxShadow: mode === 'dark'
               ? '0 4px 20px rgba(0,0,0,0.3)'
-              : '0 4px 20px rgba(148, 163, 184, 0.05)',
+              : '0 4px 20px rgba(131,155,140, 0.05)',
             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           },
         },
@@ -156,6 +160,12 @@ const getTheme = (mode = 'light') => {
         styleOverrides: {
           root: {
             borderRadius: 14,
+            backgroundColor: mode === 'dark' ? 'rgba(24,61,50,0.88)' : 'var(--sh-glass-bg)',
+            backgroundImage: 'none',
+            backdropFilter: 'blur(18px) saturate(125%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(125%)',
+            border: '1px solid rgba(255,255,255,0.72)',
+            boxShadow: '0 12px 36px rgba(24,61,50,0.07), inset 0 1px 0 rgba(255,255,255,0.6)',
           },
         },
       },
@@ -196,7 +206,7 @@ const getTheme = (mode = 'light') => {
             borderRadius: 16,
             boxShadow: mode === 'dark'
               ? '0 4px 24px rgba(0,0,0,0.4)'
-              : '0 4px 24px rgba(148, 163, 184, 0.06)',
+              : '0 4px 24px rgba(131,155,140, 0.06)',
             border: `1px solid ${colorScheme.borderGray}`,
           },
         },
@@ -205,8 +215,8 @@ const getTheme = (mode = 'light') => {
         styleOverrides: {
           root: {
             '& .MuiTableCell-head': {
-              backgroundColor: mode === 'dark' ? '#1E293B' : '#F8FAFC',
-              color: mode === 'dark' ? colorScheme.textPrimary : '#1E293B',
+              backgroundColor: mode === 'dark' ? '#254D3F' : '#F7F5EC',
+              color: mode === 'dark' ? colorScheme.textPrimary : '#254D3F',
               fontWeight: 700,
               fontSize: '0.85rem',
               borderBottom: `2px solid ${colorScheme.borderGray}`,
@@ -227,7 +237,7 @@ const getTheme = (mode = 'light') => {
           root: {
             transition: 'background-color 0.2s ease-in-out',
             '&:hover': {
-              backgroundColor: `rgba(13, 148, 136, ${mode === 'dark' ? '0.1' : '0.03'})`,
+              backgroundColor: `rgba(8,127,91, ${mode === 'dark' ? '0.1' : '0.03'})`,
             },
           },
         },
@@ -236,6 +246,7 @@ const getTheme = (mode = 'light') => {
         styleOverrides: {
           root: {
             borderRadius: 12,
+            '& .MuiAlert-icon': { animation: 'fadeInUp 240ms ease-out both' },
           },
         },
       },
@@ -243,6 +254,7 @@ const getTheme = (mode = 'light') => {
         styleOverrides: {
           paper: {
             borderRadius: 18,
+            backgroundColor: mode === 'dark' ? 'rgba(24,61,50,0.96)' : 'var(--sh-glass-raised)',
           },
         },
       },
@@ -250,6 +262,7 @@ const getTheme = (mode = 'light') => {
         styleOverrides: {
           paper: {
             borderRadius: 14,
+            backgroundColor: mode === 'dark' ? 'rgba(24,61,50,0.96)' : 'var(--sh-glass-raised)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
           },
         },
@@ -260,7 +273,7 @@ const getTheme = (mode = 'light') => {
             borderRadius: 10,
             transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              backgroundColor: `rgba(13, 148, 136, ${mode === 'dark' ? '0.12' : '0.06'})`,
+              backgroundColor: `rgba(8,127,91, ${mode === 'dark' ? '0.12' : '0.06'})`,
             },
           },
         },

@@ -4,6 +4,12 @@ const PromoModel = require('../models/promo.model');
 const TransactionModel = require('../models/transaction.model');
 const SubmissionModel = require('../models/submission.model');
 
+const isValidReportDate = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
 exports.getDashboardStats = async (req, res) => {
   try {
     const totalUsers = await UserModel.getCount();
@@ -95,6 +101,9 @@ exports.approveSubmission = async (req, res) => {
 
     if (status === 'approved') {
       const data = submission.data;
+      if ((submission.type === 'stock_update' && data.stock !== undefined) || (submission.type === 'product' && Number(data.stock || 0) !== 0)) {
+        return res.status(409).json({ message: 'This legacy stock request cannot be approved. Reject it and use Bodega Inventory receiving or transfer instead.' });
+      }
       switch (submission.type) {
         case 'product':
           await ProductModel.create({
@@ -127,10 +136,8 @@ exports.approveSubmission = async (req, res) => {
               name: data.name,
               description: data.description,
               price: data.price,
-              stock: data.stock,
               category: data.category,
               image_url: data.image_url,
-              expiry_date: data.expiry_date
             });
           }
           break;
@@ -159,27 +166,50 @@ exports.approveSubmission = async (req, res) => {
 
 exports.getSalesReport = async (req, res) => {
   try {
-    const { period = 'monthly', chart = 'sales_category' } = req.query;
+    const { period = 'monthly', chart = 'sales_category', month } = req.query;
     const validPeriods = ['weekly', 'monthly'];
-    const validCharts = ['sales_category', 'top_products'];
+    const validCharts = ['sales_category', 'top_products', 'sales_trend'];
 
     if (!validPeriods.includes(period)) {
       return res.status(400).json({ message: 'Invalid period. Use "weekly" or "monthly".' });
     }
     if (!validCharts.includes(chart)) {
-      return res.status(400).json({ message: 'Invalid chart type. Use "sales_category" or "top_products".' });
+      return res.status(400).json({ message: 'Invalid chart type.' });
+    }
+    if (month !== undefined && (period !== 'monthly' || typeof month !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month))) {
+      return res.status(400).json({ message: 'Use a valid month in YYYY-MM format with the monthly period.' });
+    }
+
+    if (chart === 'sales_trend') {
+      const { start_date, end_date } = req.query;
+      if (!isValidReportDate(start_date) || !isValidReportDate(end_date)) {
+        return res.status(400).json({ message: 'Provide valid start_date and end_date values in YYYY-MM-DD format.' });
+      }
+
+      const startTime = Date.parse(`${start_date}T00:00:00.000Z`);
+      const endTime = Date.parse(`${end_date}T00:00:00.000Z`);
+      const dayCount = (endTime - startTime) / (24 * 60 * 60 * 1000) + 1;
+      if (dayCount < 1) {
+        return res.status(400).json({ message: 'end_date must be on or after start_date.' });
+      }
+      if (dayCount > 366) {
+        return res.status(400).json({ message: 'The selected date range cannot exceed 366 days.' });
+      }
+
+      const report = await TransactionModel.getSalesTrend(start_date, end_date);
+      return res.json({ ...report, period: 'custom', chart, start_date, end_date });
     }
 
     let data;
     if (chart === 'sales_category') {
-      data = await TransactionModel.getSalesByCategory(period);
+      data = await TransactionModel.getSalesByCategory(period, month);
     } else {
-      data = await TransactionModel.getTopProducts(period);
+      data = await TransactionModel.getTopProducts(period, month);
     }
 
-    const summary = await TransactionModel.getSalesSummary(period);
+    const summary = await TransactionModel.getSalesSummary(period, month);
 
-    res.json({ data, summary, period, chart });
+    res.json({ data, summary, period, chart, month: month || null });
   } catch (error) {
     console.error('Get sales report error:', error);
     res.status(500).json({ message: 'Server error.' });

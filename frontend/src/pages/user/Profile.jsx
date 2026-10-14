@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import {
   Alert,
@@ -42,7 +42,58 @@ import { useAuth } from "../../contexts/AuthContext";
 import API from "../../api/axios";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const [nameFields, setNameFields] = useState({
+    first_name: user?.first_name || "",
+    middle_name: user?.middle_name || "",
+    last_name: user?.last_name || "",
+  });
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    API.get("/auth/me")
+      .then(({ data }) => {
+        if (!active) return;
+        updateUser(data);
+        setNameFields({ first_name: data.first_name || "", middle_name: data.middle_name || "", last_name: data.last_name || "" });
+      })
+      .catch(() => {
+        if (active) setProfileError("Unable to load your latest profile. Refresh the page to try again.");
+      })
+      .finally(() => { if (active) setProfileLoading(false); });
+    return () => { active = false; };
+  }, [updateUser]);
+
+  const handleSaveProfile = async (event) => {
+    event.preventDefault();
+    if (profileSaving || profileLoading) return;
+    setProfileError("");
+    setProfileSuccess("");
+    const names = Object.fromEntries(Object.entries(nameFields).map(([key, value]) => [key, value.trim()]));
+    if (!names.first_name || !names.last_name) {
+      setProfileError("Please enter your first and last name.");
+      return;
+    }
+    if (Object.values(names).filter(Boolean).join(" ").length > 100) {
+      setProfileError("Your full name must not exceed 100 characters.");
+      return;
+    }
+    setProfileSaving(true);
+    try {
+      const { data } = await API.put("/auth/profile", names);
+      updateUser(data.user);
+      setNameFields(names);
+      setProfileSuccess(data.message || "Profile updated successfully.");
+    } catch (error) {
+      setProfileError(error.response?.data?.message || "Unable to save your profile. Please try again.");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const [changeOpen, setChangeOpen] = useState(false);
 
@@ -76,16 +127,16 @@ const Profile = () => {
     client: {
       label: "Client",
       color: "#047857",
-      background: "#ECFDF5",
+      background: "#D8F3E5",
       border: "#A7F3D0",
     },
   };
 
   const currentRole = roleConfig[normalizedRole] || {
     label: user?.role || "User",
-    color: "#475569",
-    background: "#F8FAFC",
-    border: "#E2E8F0",
+    color: "#4C695A",
+    background: "var(--sh-page-tint)",
+    border: "#D5E5D9",
   };
 
   const initials = useMemo(() => {
@@ -226,7 +277,7 @@ const Profile = () => {
     <Box
       sx={{
         minHeight: "100%",
-        bgcolor: "#F8FAFC",
+        bgcolor: "var(--sh-page-tint)",
         p: {
           xs: 2,
           sm: 3,
@@ -242,7 +293,7 @@ const Profile = () => {
       >
         <Typography
           sx={{
-            color: "#0F172A",
+            color: "#183D32",
             fontSize: {
               xs: "1.85rem",
               md: "2.2rem",
@@ -258,7 +309,7 @@ const Profile = () => {
         <Typography
           sx={{
             mt: 0.7,
-            color: "#64748B",
+            color: "#617B6C",
             fontSize: 14,
           }}
         >
@@ -474,6 +525,33 @@ const Profile = () => {
 
         <Grid item xs={12} md={8}>
           <Stack spacing={2.5}>
+            {normalizedRole === "client" && (
+              <Paper component="form" onSubmit={handleSaveProfile} elevation={0} sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 5, bgcolor: "var(--sh-glass-bg)", border: "1px solid #D5E5D9" }}>
+                <Typography sx={{ color: "#183D32", fontSize: 17, fontWeight: 850 }}>Edit Personal Information</Typography>
+                <Typography sx={{ color: "#839B8C", fontSize: 12, mt: 0.5, mb: 2.5 }}>Update your name. Middle name is optional.</Typography>
+                {profileError && <Alert severity="error" sx={{ mb: 2 }}>{profileError}</Alert>}
+                {profileSuccess && <Alert severity="success" sx={{ mb: 2 }}>{profileSuccess}</Alert>}
+                <Grid container spacing={2}>
+                  {[
+                    { key: "first_name", label: "First Name", autocomplete: "given-name" },
+                    { key: "middle_name", label: "Middle Name", autocomplete: "additional-name" },
+                    { key: "last_name", label: "Last Name", autocomplete: "family-name" },
+                  ].map((field) => (
+                    <Grid item xs={12} sm={4} key={field.key}>
+                      <TextField fullWidth label={field.label} value={nameFields[field.key]} required={field.key !== "middle_name"} autoComplete={field.autocomplete} inputProps={{ maxLength: 100 }} disabled={profileLoading || profileSaving} onChange={(event) => {
+                        setNameFields((current) => ({ ...current, [field.key]: event.target.value }));
+                        setProfileSuccess("");
+                      }} />
+                    </Grid>
+                  ))}
+                </Grid>
+                <Box sx={{ mt: 2.5, display: "flex", justifyContent: "flex-end" }}>
+                  <Button type="submit" variant="contained" disabled={profileLoading || profileSaving} sx={{ bgcolor: "#047857", "&:hover": { bgcolor: "#065F46" } }}>
+                    {profileLoading ? "Loading profile..." : profileSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </Box>
+              </Paper>
+            )}
             {/* ACCOUNT INFO */}
 
             <Paper
@@ -484,8 +562,8 @@ const Profile = () => {
                   sm: 3,
                 },
                 borderRadius: 5,
-                bgcolor: "#FFFFFF",
-                border: "1px solid #E2E8F0",
+                bgcolor: "var(--sh-glass-bg)",
+                border: "1px solid #D5E5D9",
               }}
             >
               <Stack
@@ -502,7 +580,7 @@ const Profile = () => {
                     height: 42,
                     display: "grid",
                     placeItems: "center",
-                    bgcolor: "#ECFDF5",
+                    bgcolor: "#D8F3E5",
                     color: "#059669",
                     borderRadius: 2.5,
                   }}
@@ -513,7 +591,7 @@ const Profile = () => {
                 <Box>
                   <Typography
                     sx={{
-                      color: "#0F172A",
+                      color: "#183D32",
                       fontSize: 17,
                       fontWeight: 850,
                     }}
@@ -524,7 +602,7 @@ const Profile = () => {
                   <Typography
                     sx={{
                       mt: 0.2,
-                      color: "#94A3B8",
+                      color: "#839B8C",
                       fontSize: 11,
                     }}
                   >
@@ -541,8 +619,8 @@ const Profile = () => {
                         height: "100%",
                         p: 2,
                         borderRadius: 3,
-                        bgcolor: "#F8FAFC",
-                        border: "1px solid #F1F5F9",
+                        bgcolor: "var(--sh-page-tint)",
+                        border: "1px solid #EDF3E8",
                         transition: "all .2s ease",
 
                         "&:hover": {
@@ -560,9 +638,9 @@ const Profile = () => {
                             flexShrink: 0,
                             display: "grid",
                             placeItems: "center",
-                            bgcolor: "#FFFFFF",
+                            bgcolor: "var(--sh-glass-bg)",
                             color: "#059669",
-                            border: "1px solid #E2E8F0",
+                            border: "1px solid #D5E5D9",
                             borderRadius: 2.5,
                           }}
                         >
@@ -576,7 +654,7 @@ const Profile = () => {
                         >
                           <Typography
                             sx={{
-                              color: "#94A3B8",
+                              color: "#839B8C",
                               fontSize: 9.5,
                               fontWeight: 800,
                               textTransform: "uppercase",
@@ -589,7 +667,7 @@ const Profile = () => {
                           <Typography
                             sx={{
                               mt: 0.3,
-                              color: "#0F172A",
+                              color: "#183D32",
                               fontSize: 13,
                               fontWeight: 750,
                               wordBreak: "break-word",
@@ -615,8 +693,8 @@ const Profile = () => {
                   sm: 3,
                 },
                 borderRadius: 5,
-                bgcolor: "#FFFFFF",
-                border: "1px solid #E2E8F0",
+                bgcolor: "var(--sh-glass-bg)",
+                border: "1px solid #D5E5D9",
               }}
             >
               <Stack
@@ -650,7 +728,7 @@ const Profile = () => {
                   <Box>
                     <Typography
                       sx={{
-                        color: "#0F172A",
+                        color: "#183D32",
                         fontSize: 15,
                         fontWeight: 850,
                       }}
@@ -661,7 +739,7 @@ const Profile = () => {
                     <Typography
                       sx={{
                         mt: 0.3,
-                        color: "#64748B",
+                        color: "#617B6C",
                         fontSize: 11.5,
                         lineHeight: 1.6,
                       }}
@@ -714,7 +792,7 @@ const Profile = () => {
                     flexShrink: 0,
                     display: "grid",
                     placeItems: "center",
-                    bgcolor: "#FFFFFF",
+                    bgcolor: "var(--sh-glass-bg)",
                     color: "#D97706",
                     borderRadius: 2.5,
                   }}
@@ -842,7 +920,7 @@ const Profile = () => {
               sm: 3.5,
             },
             py: "28px !important",
-            bgcolor: "#FAFCFB",
+            bgcolor: "var(--sh-page-tint)",
           }}
         >
           {changeError && (
@@ -977,15 +1055,15 @@ const Profile = () => {
               sx={{
                 mt: 2.5,
                 p: 2,
-                bgcolor: strongPassword ? "#ECFDF5" : "#F8FAFC",
-                border: `1px solid ${strongPassword ? "#A7F3D0" : "#E2E8F0"}`,
+                bgcolor: strongPassword ? "#D8F3E5" : "#F7F5EC",
+                border: `1px solid ${strongPassword ? "#A7F3D0" : "#D5E5D9"}`,
                 borderRadius: 3,
               }}
             >
               <Typography
                 sx={{
                   mb: 1.2,
-                  color: "#64748B",
+                  color: "#617B6C",
                   fontSize: 10,
                   fontWeight: 850,
                   textTransform: "uppercase",
@@ -1025,7 +1103,7 @@ const Profile = () => {
 
                       <Typography
                         sx={{
-                          color: check.passed ? "#047857" : "#94A3B8",
+                          color: check.passed ? "#047857" : "#839B8C",
                           fontSize: 10.5,
                           fontWeight: 650,
                         }}
@@ -1047,14 +1125,14 @@ const Profile = () => {
               sm: 3.5,
             },
             py: 2.5,
-            borderTop: "1px solid #F1F5F9",
+            borderTop: "1px solid #EDF3E8",
           }}
         >
           <Button
             disabled={changeLoading}
             onClick={closePasswordDialog}
             sx={{
-              color: "#64748B",
+              color: "#617B6C",
               borderRadius: 3,
               textTransform: "none",
               fontWeight: 700,

@@ -1,0 +1,144 @@
+frontend/src/pages/public/Homepage.jsx:55:  email: "contact@storehub.ph",
+frontend/src/pages/public/Homepage.jsx:571:                          Open daily from 7:00 AM to 9:00 PM.
+frontend/src/pages/public/Homepage.jsx:1159:                          <Typography sx={{ mt: .2, color: "#7B8C89", fontSize: ".7rem" }}>Daily · 7:00 AM–9:00 PM</Typography>
+frontend/src/components/Footer.jsx:275:                  +63 912 345 6789
+frontend/src/components/Footer.jsx:281:                  contact@storehub.ph
+46-  PointOfSaleRounded,
+47-  PrintRounded,
+48:  ReceiptLongRounded,
+49-  RefreshRounded,
+50-  RemoveRounded,
+--
+71-};
+72-
+73:const ReceiptManagement = () => {
+74-  const checkoutRequest = useRef(null);
+75-  const checkoutBusy = useRef(false);
+--
+346-  ========================================================= */
+347-
+348:  const validateReceipt = () => {
+349-    const selectedPaymentMethod = formData.payment_method || "cash";
+350-
+--
+402-  ========================================================= */
+403-
+404:  const handleCreateReceipt = async () => {
+405-    if (checkoutBusy.current) return;
+406-    const selectedPaymentMethod = formData.payment_method || "cash";
+407:    const validationError = validateReceipt();
+408-
+409-    if (validationError) {
+--
+449-      showAlert(
+450-        response?.data?.receipt_number
+451:          ? `Receipt ${response.data.receipt_number} created successfully.`
+452:          : "Receipt created successfully.",
+453-      );
+454-
+--
+477-  ========================================================= */
+478-
+479:  const handleViewReceipt = async (id) => {
+480-    setViewLoading(true);
+481-    setViewDialog(true);
+--
+697-            }}
+698-          >
+699:            Cashier & Receipts
+700-          </Typography>
+701-
+--
+770-            }}
+771-          >
+772:            New Receipt
+773-          </Button>
+774-        </Stack>
+--
+805-        {[
+806-          {
+807:            title: "Total Receipts",
+808-            value: transactions.length,
+809:            icon: <ReceiptLongRounded />,
+810-            color: "#2563EB",
+811-            background: "#EFF6FF",
+--
+966-                  <TableCell>Client</TableCell>
+967-                  <TableCell>Identifier</TableCell>
+968:                  <TableCell>Completed Transactions</TableCell>
+969-                  <TableCell>Total Spent</TableCell>
+970-                </TableRow>
+--
+1064-                }}
+1065-              >
+1066:                <ReceiptLongRounded />
+1067-              </Box>
+1068-
+--
+1077-                  }}
+1078-                >
+1079:                  Receipt History
+1080-                </Typography>
+1081-
+--
+1186-              }}
+1187-            >
+1188:              <ReceiptLongRounded
+1189-                sx={{
+1190-                  fontSize: 40,
+--
+1252-              <TableHead>
+1253-                <TableRow>
+1254:                  <TableCell>Receipt Number</TableCell>
+1255-
+1256-                  <TableCell>Customer</TableCell>
+--
+1386-                        variant="outlined"
+1387-                        startIcon={<VisibilityRounded />}
+1388:                        onClick={() => handleViewReceipt(transaction.id)}
+1389-                        sx={{
+1390-                          borderRadius: 2.5,
+--
+2070-          <Button
+2071-            variant="contained"
+2072:            onClick={handleCreateReceipt}
+2073-            disabled={
+2074-              creating ||
+--
+2076-              Number(tenderedAmount) < calculateTotal()
+2077-            }
+2078:            startIcon={creating ? null : <ReceiptLongRounded />}
+2079-            sx={{
+2080-              minWidth: 180,
+--
+2158-              }}
+2159-            >
+2160:              <ReceiptLongRounded />
+2161-            </Box>
+2162-
+--
+2171-                }}
+2172-              >
+2173:                Receipt Preview
+2174-              </Typography>
+2175-
+--
+2595-            }}
+2596-          >
+2597:            Print Receipt
+2598-          </Button>
+2599-        </DialogActions>
+--
+2603-};
+2604-
+2605:export default ReceiptManagement;
+160:  const comparison = reports?.trend?.comparison;
+161:  const projection = reports?.trend?.projection;
+162:  const revenueChange = comparison?.revenue_change_percent;
+163:  const changeText = revenueChange == null ? 'No percentage comparison: the previous period had no sales.' : `Revenue ${revenueChange >= 0 ? 'increased' : 'decreased'} by ${Math.abs(revenueChange).toFixed(1)}% versus the previous equal-length period.`;
+283:                {comparison && <Typography sx={{ fontSize: 12, color: muted, mb: 1 }}>Previous period: {comparison.previous_start_date} – {comparison.previous_end_date}; revenue {money.format(comparison.total_revenue)}.</Typography>}
+288:              <Panel title="Next 7 days: estimated sales" note={projection ? `${projection.forecast_start} – ${projection.forecast_end}` : ''}>
+289:                <Typography sx={{ fontSize: 25, fontWeight: 700, color: cyan }}>{projection?.available ? money.format(projection.estimated_revenue) : 'Insufficient sales history'}</Typography>
+290:                <Typography sx={{ fontSize: 12, mt: 1 }}>{projection?.available ? `Daily average: ${money.format(projection.average_daily_sales)}.` : 'At least 7 complete calendar days since the first recorded sale are needed.'}</Typography>
+291:                <Typography sx={{ fontSize: 12, color: muted, mt: 1 }}>Based on {projection?.source_start} – {projection?.source_end}. Uses the latest complete days, independently of the report filter.</Typography>
+292:                <Typography sx={{ fontSize: 12, color: muted, mt: 1 }}>{projection?.method}</Typography>

@@ -1,4 +1,5 @@
 const { db } = require('../config/db');
+const supabase = require('../config/supabase');
 
 const SubmissionModel = {
   async create({ type, data, submitted_by }) {
@@ -38,9 +39,12 @@ const SubmissionModel = {
   async getClientWalkInRequests(userId) {
     const submissions = await db.pending_submissions.find({
       submitted_by: userId,
-      type: 'walk_in_order'
+      type: 'walk_in_order',
     });
-    return submissions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    return submissions
+      .filter((submission) => ['pending', 'cancelled'].includes(submission.status))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   },
 
   async getByType(type, status = 'pending') {
@@ -61,6 +65,15 @@ const SubmissionModel = {
     const updates = { status, reviewed_at: new Date().toISOString() };
     if (admin_notes) updates.admin_notes = admin_notes;
     return await db.pending_submissions.update(id, updates);
+  },
+
+  async cancelPendingWalkIn(id, admin_notes) {
+    const { data, error } = await supabase.from('pending_submissions')
+      .update({ status: 'cancelled', reviewed_at: new Date().toISOString(), admin_notes })
+      .eq('id', id).eq('type', 'walk_in_order').eq('status', 'pending')
+      .select('id').maybeSingle();
+    if (error) throw error;
+    return data;
   },
 
   async getPendingCount() {

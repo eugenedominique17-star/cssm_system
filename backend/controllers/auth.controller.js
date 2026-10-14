@@ -172,3 +172,25 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 };
+
+exports.updateProfile = async (req, res) => {
+  try {
+    if (req.user.role !== 'client') return res.status(403).json({ message: 'Only clients can edit this profile.' });
+    const schema = Joi.object({
+      first_name: Joi.string().trim().min(1).max(100).required(),
+      middle_name: Joi.string().trim().max(100).allow('').default(''),
+      last_name: Joi.string().trim().min(1).max(100).required(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
+    const name = [value.first_name, value.middle_name, value.last_name].filter(Boolean).join(' ');
+    if (name.length > 100) return res.status(400).json({ message: 'Your full name must not exceed 100 characters.' });
+    const updated = await UserModel.update(req.user.id, { ...value, name });
+    if (!updated) return res.status(500).json({ message: 'Unable to save your profile. Please try again.' });
+    const { password, ...profile } = updated;
+    res.json({ message: 'Profile updated successfully.', user: { ...profile, role: 'client' } });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Unable to save your profile. Please try again.' });
+  }
+};

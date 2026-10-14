@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, CircularProgress, Alert, Chip, Card, Grid, Avatar } from '@mui/material';
-import { CheckCircle, Cancel, PersonAdd } from '@mui/icons-material';
+import { Box, Typography, Paper, CircularProgress, Alert, Card, Grid } from '@mui/material';
+import { PersonAdd } from '@mui/icons-material';
+import AccountApprovalCards from '../../components/AccountApprovalCards';
 import API from '../../api/axios';
 import { colors } from '../../theme';
 
@@ -26,7 +27,7 @@ const ClientApprovals = () => {
     try {
       await API.put(`/users/${id}/approve`);
       showAlert('Client account approved!');
-      fetchPending();
+      await fetchPending();
     } catch (error) {
       showAlert('Failed to approve client.', 'error');
     }
@@ -36,7 +37,7 @@ const ClientApprovals = () => {
     try {
       await API.put(`/users/${id}/reject`);
       showAlert('Client account rejected successfully.', 'success');
-      fetchPending();
+      await fetchPending();
     } catch (error) {
       showAlert('Failed to reject client.', 'error');
     }
@@ -142,138 +143,7 @@ const ClientApprovals = () => {
           </Typography>
         </Paper>
       ) : (
-        <TableContainer
-          component={Paper}
-          sx={{
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            overflow: 'hidden',
-          }}
-        >
-          <Table>
-            <TableHead>
-              <TableRow
-                sx={{
-                  bgcolor: 'rgba(0,168,150,0.08)',
-                  '& th': {
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    color: '#0F172A',
-                    borderBottom: '2px solid rgba(0,168,150,0.2)',
-                  },
-                }}
-              >
-                <TableCell>User ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Phone</TableCell>
-                <TableCell>Registered</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {pendingClients.map((client, index) => (
-                <TableRow
-                  key={client.id}
-                  sx={{
-                    '&:hover': {
-                      bgcolor: 'rgba(0,168,150,0.04)',
-                      transition: 'background-color 0.2s ease',
-                    },
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
-                    '&:last-child td, &:last-child th': { border: 0 },
-                  }}
-                >
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Avatar
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          bgcolor: 'linear-gradient(135deg, #00A896 0%, #00897B 100%)',
-                          fontSize: '0.875rem',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {client.name.charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
-                        {client.user_id || `#${client.id}`}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={600} sx={{ color: '#0F172A' }}>
-                      {client.name}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: '#64748B' }}>
-                      {client.email}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: '#64748B' }}>
-                      {client.phone || <Chip label="N/A" size="small" variant="outlined" />}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.85rem' }}>
-                      {new Date(client.created_at).toLocaleDateString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={() => handleApprove(client.id)}
-                        startIcon={<CheckCircle />}
-                        sx={{
-                          bgcolor: '#10b981',
-                          textTransform: 'none',
-                          fontWeight: 600,
-                          fontSize: '0.85rem',
-                          py: 0.75,
-                          px: 2,
-                          '&:hover': {
-                            bgcolor: '#059669',
-                            boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                          },
-                        }}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleReject(client.id)}
-                        startIcon={<Cancel />}
-                        sx={{
-                          color: '#ef4444',
-                          borderColor: '#fca5a5',
-                          textTransform: 'none',
-                          fontWeight: 600,
-                          fontSize: '0.85rem',
-                          py: 0.75,
-                          px: 2,
-                          '&:hover': {
-                            bgcolor: '#fee2e2',
-                            borderColor: '#ef4444',
-                          },
-                        }}
-                      >
-                        Reject
-                      </Button>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <AccountApprovalCards accounts={pendingClients} role="client" onApprove={handleApprove} onReject={handleReject} />
       )}
     </Box>
   );

@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "@supabase/server": "^1.4.1",
-    "@supabase/supabase-js": "^2.111.0"
+    "@supabase/supabase-js": "^2.111.0",
+    "framer-motion": "^13.5.1",
+    "motion": "^14.0.0"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

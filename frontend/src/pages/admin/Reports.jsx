@@ -1,185 +1,417 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Grid, Paper, FormControl, InputLabel, Select, MenuItem, CircularProgress } from '@mui/material';
-import { Bar, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Receipt, TrendingUp } from '@mui/icons-material';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert, Box, CircularProgress, FormControl, Grid, InputLabel,
+  MenuItem, Paper, Select, Stack, TextField, Typography,
+} from '@mui/material';
+import { Bar, Doughnut, Line, Radar } from 'react-chartjs-2';
+import {
+  ArcElement, BarElement, CategoryScale, Chart as ChartJS, Filler,
+  Legend, LineElement, LinearScale, PointElement, RadialLinearScale, Tooltip,
+} from 'chart.js';
 import API from '../../api/axios';
-import { colors } from '../../theme';
+import { useAuth } from '../../contexts/AuthContext';
+import { calculateSevenDaySalesEstimate } from '../../utils/salesForecast.mjs';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+ChartJS.register(ArcElement, BarElement, CategoryScale, Filler, Legend, LineElement, LinearScale, PointElement, RadialLinearScale, Tooltip);
+
+const cyan = '#087F5B';
+const blue = '#46AC87';
+const pink = '#B4D8A9';
+const purple = '#537B61';
+const colors = [cyan, pink, purple, blue, '#D6C993', '#B9E5D7'];
+const ink = '#343947';
+const muted = '#9CA4B3';
+const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+const number = new Intl.NumberFormat('en-PH');
+
+const dateValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const initialRange = () => {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 29);
+  return { start: dateValue(start), end: dateValue(end) };
+};
+
+const panel = {
+  bgcolor: 'var(--sh-glass-bg)',
+  border: '1px solid #F0F1F7',
+  borderRadius: 3,
+  boxShadow: '0 7px 24px rgba(90, 106, 145, .035)',
+};
+const field = {
+  '& .MuiOutlinedInput-root': { borderRadius: 1, bgcolor: 'var(--sh-glass-bg)', fontSize: 13 },
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#E9ECF5' },
+  '& .MuiInputLabel-root': { color: '#8D96A6', fontSize: 13 },
+};
+const chartBase = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { backgroundColor: '#303847', padding: 10, displayColors: false, cornerRadius: 5 },
+  },
+};
+
+const Panel = ({ title, note, children, sx = {} }) => (
+  <Paper elevation={0} sx={{ ...panel, p: { xs: 2, sm: 2.5 }, height: '100%', ...sx }}>
+    <Stack direction="row" justifyContent="space-between" alignItems="baseline" spacing={1} sx={{ mb: 2 }}>
+      <Typography sx={{ fontSize: 13, fontWeight: 700, color: ink }}>{title}</Typography>
+      {note && <Typography sx={{ fontSize: 11, color: muted, textAlign: 'right' }}>{note}</Typography>}
+    </Stack>
+    {children}
+  </Paper>
+);
+
+const Metric = ({ label, value, note, color }) => (
+  <Paper elevation={0} sx={{ ...panel, p: 2.1, minHeight: 107, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, overflow: 'hidden' }}>
+    <Box sx={{ borderLeft: `2px solid ${color}`, pl: 1.4, minWidth: 0 }}>
+      <Typography sx={{ fontSize: 11, color: ink, mb: 1 }}>{label}</Typography>
+      <Typography sx={{ fontSize: { xs: 19, xl: 23 }, fontWeight: 400, lineHeight: 1.2, color: '#5B606A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
+      <Typography sx={{ fontSize: 10, color: muted, mt: 0.5 }}>{note}</Typography>
+    </Box>
+    <Box sx={{ flexShrink: 0, width: 42, height: 42, borderRadius: '50%', border: '3px solid #F0F2F8', borderTopColor: color, borderRightColor: color, transform: 'rotate(-30deg)' }} />
+  </Paper>
+);
+
+const Empty = ({ text = 'No sales for this period' }) => (
+  <Box sx={{ height: '100%', minHeight: 170, display: 'grid', placeItems: 'center', color: muted, fontSize: 12, textAlign: 'center' }}>{text}</Box>
+);
 
 const Reports = () => {
+  const { user } = useAuth();
   const [period, setPeriod] = useState('monthly');
-  const [chartType, setChartType] = useState('sales_category');
-  const [reportData, setReportData] = useState(null);
+  const [month, setMonth] = useState(() => dateValue(new Date()).slice(0, 7));
+  const [range, setRange] = useState(initialRange);
+  const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [forecast, setForecast] = useState(null);
+  const [forecastLoading, setForecastLoading] = useState(true);
+  const [forecastError, setForecastError] = useState('');
+
+  const invalidMonth = period !== 'weekly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month);
+  const invalidRange = period === 'custom' && (!range.start || !range.end || range.start > range.end);
+  const monthLabel = invalidMonth ? 'Selected month' : new Date(`${month}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+  const periodLabel = period === 'weekly' ? 'Last 7 days' : period === 'custom' ? `${range.start} – ${range.end}` : monthLabel;
+  const groupedLabel = period === 'custom' ? monthLabel : periodLabel;
 
   useEffect(() => {
-    fetchReport();
-  }, [period, chartType]);
-
-  const fetchReport = async () => {
-    setLoading(true);
-    try {
-      const response = await API.get(`/admin/reports?period=${period}&chart=${chartType}`);
-      setReportData(response.data);
-    } catch (error) {
-      console.error('Failed to fetch report:', error);
-    } finally {
+    if (invalidMonth || invalidRange) {
+      setReports(null);
       setLoading(false);
+      return undefined;
     }
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const groupParams = new URLSearchParams({ period: period === 'weekly' ? 'weekly' : 'monthly' });
+        if (period !== 'weekly') groupParams.set('month', month);
+        const trendParams = new URLSearchParams({ period: 'monthly', chart: 'sales_trend' });
+        if (period === 'weekly') {
+          const end = new Date();
+          const start = new Date(end);
+          start.setDate(start.getDate() - 6);
+          trendParams.set('start_date', dateValue(start));
+          trendParams.set('end_date', dateValue(end));
+        } else if (period === 'custom') {
+          trendParams.set('start_date', range.start);
+          trendParams.set('end_date', range.end);
+        } else {
+          const [year, monthNumber] = month.split('-').map(Number);
+          trendParams.set('start_date', `${month}-01`);
+          trendParams.set('end_date', `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, '0')}`);
+        }
+        const [trend, category, products] = await Promise.all([
+          API.get(`/admin/reports?${trendParams}`),
+          API.get(`/admin/reports?${groupParams}&chart=sales_category`),
+          API.get(`/admin/reports?${groupParams}&chart=top_products`),
+        ]);
+        if (active) setReports({ trend: trend.data, category: category.data, products: products.data });
+      } catch (fetchError) {
+        if (active) {
+          setReports(null);
+          setError(fetchError.response?.data?.message || 'Could not load sales reports.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [period, month, range.start, range.end, invalidMonth, invalidRange]);
+
+  useEffect(() => {
+    let active = true;
+    const loadForecast = async () => {
+      setForecastLoading(true);
+      setForecastError('');
+
+      const end = new Date();
+      end.setDate(end.getDate() - 1);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 29);
+      const forecastParams = new URLSearchParams({
+        period: 'monthly',
+        chart: 'sales_trend',
+        start_date: dateValue(start),
+        end_date: dateValue(end),
+      });
+
+      try {
+        const response = await API.get(`/admin/reports?${forecastParams}`);
+        if (active) setForecast(calculateSevenDaySalesEstimate(response.data?.data));
+      } catch (fetchError) {
+        if (active) {
+          setForecast(null);
+          setForecastError(fetchError.response?.data?.message || 'Could not load the sales estimate.');
+        }
+      } finally {
+        if (active) setForecastLoading(false);
+      }
+    };
+
+    loadForecast();
+    return () => { active = false; };
+  }, []);
+
+  const daily = reports?.trend?.data || [];
+  const categories = reports?.category?.data || [];
+  const products = reports?.products?.data || [];
+  const summary = reports?.trend?.summary;
+  const totalRevenue = Number(summary?.total_revenue || 0);
+  const transactions = Number(summary?.total_transactions || 0);
+  const averageSale = transactions ? totalRevenue / transactions : 0;
+  const comparison = reports?.trend?.comparison;
+  const previousRevenue = Number(comparison?.total_revenue || 0);
+  const revenueChange = comparison?.revenue_change_percent;
+  const hasRevenueComparison = typeof revenueChange === 'number' && Number.isFinite(revenueChange);
+  const comparisonLabel = comparison
+    ? `${comparison.previous_start_date} – ${comparison.previous_end_date}`
+    : 'Previous period';
+  const revenueChangeLabel = !comparison
+    ? 'Comparison unavailable'
+    : hasRevenueComparison
+      ? `${revenueChange > 0 ? '+' : ''}${revenueChange.toFixed(1)}%`
+      : 'No previous sales to compare';
+  const itemsSold = products.reduce((sum, product) => sum + Number(product.total_quantity || 0), 0);
+  const leadingCategory = categories[0];
+  const categoryTotal = categories.reduce((sum, category) => sum + Number(category.total_sales || 0), 0);
+  const leadingShare = categoryTotal ? Math.round(Number(leadingCategory?.total_sales || 0) / categoryTotal * 100) : 0;
+  const dailyLabels = daily.map((item) => item.date.slice(5));
+  const dailyValues = daily.map((item) => Number(item.total_sales || 0));
+  const categoryLabels = categories.map((item) => item.category || 'Uncategorized');
+  const categoryValues = categories.map((item) => Number(item.total_sales || 0));
+  const chartHeight = { xs: 205, sm: 225 };
+
+  const dailyBarData = {
+    labels: dailyLabels,
+    datasets: [{ data: dailyValues, backgroundColor: dailyValues.map((_, index) => colors[index % 4]), borderRadius: 3, maxBarThickness: 12, categoryPercentage: 0.76 }],
   };
-
-  const getChartData = () => {
-    if (!reportData?.data) return null;
-
-    if (chartType === 'sales_category') {
-      return {
-        labels: reportData.data.map(d => d.category),
-        datasets: [{
-          label: 'Sales by Category',
-          data: reportData.data.map(d => parseFloat(d.total_sales)),
-          backgroundColor: ['#00A896', '#FCA311', '#FF6B6B', '#9B59B6', '#3498DB', '#2ECC71', '#E91E63', '#00BCD4'],
-          borderWidth: 1
-        }]
-      };
-    } else {
-      return {
-        labels: reportData.data.map(d => d.name),
-        datasets: [{
-          label: 'Quantity Sold',
-          data: reportData.data.map(d => d.total_quantity),
-          backgroundColor: '#00A896',
-          borderColor: '#00897B',
-          borderWidth: 1
-        }]
-      };
-    }
+  const dailyLineData = {
+    labels: dailyLabels,
+    datasets: [{ data: dailyValues, borderColor: blue, backgroundColor: 'rgba(105,171,245,.12)', fill: true, tension: 0.42, borderWidth: 2, pointBackgroundColor: blue, pointBorderColor: '#FFFFFF', pointBorderWidth: 2, pointRadius: 0, pointHoverRadius: 5 }],
   };
-
-  const formatPrice = (price) => `₱${parseFloat(price).toFixed(2)}`;
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { position: 'bottom' },
-      title: { display: true, text: chartType === 'sales_category' ? 'Sales by Category' : 'Top Products' }
-    }
+  const radarData = {
+    labels: categoryLabels,
+    datasets: [{ data: categoryValues, borderColor: pink, backgroundColor: 'rgba(166,157,247,.29)', borderWidth: 2, pointBackgroundColor: cyan, pointRadius: 2 }],
   };
-
-  const barOptions = {
-    ...chartOptions,
+  const doughnutData = {
+    labels: categoryLabels,
+    datasets: [{ data: categoryValues, backgroundColor: categoryValues.map((_, index) => colors[index % colors.length]), borderWidth: 0, hoverOffset: 4, borderRadius: 4 }],
+  };
+  const cartesianOptions = {
+    ...chartBase,
     scales: {
-      y: { beginAtZero: true }
-    }
+      x: { border: { display: false }, grid: { display: false }, ticks: { color: muted, font: { size: 9 }, maxTicksLimit: 9, maxRotation: 0 } },
+      y: { beginAtZero: true, border: { display: false }, grid: { color: '#EDF0F6' }, ticks: { color: muted, font: { size: 9 }, maxTicksLimit: 5, callback: (value) => Number(value).toLocaleString('en-PH') } },
+    },
   };
 
   return (
-    <Box className="page-container">
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" className="page-title" sx={{ mb: 1 }}>
-          Sales Reports
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          View sales analytics and performance metrics.
-        </Typography>
-      </Box>
-
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth>
-            <InputLabel>Period</InputLabel>
-            <Select value={period} label="Period" onChange={(e) => setPeriod(e.target.value)}>
-              <MenuItem value="weekly">Weekly</MenuItem>
-              <MenuItem value="monthly">Monthly</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth>
-            <InputLabel>Chart Type</InputLabel>
-            <Select value={chartType} label="Chart Type" onChange={(e) => setChartType(e.target.value)}>
-              <MenuItem value="sales_category">Sales by Category</MenuItem>
-              <MenuItem value="top_products">Top Products</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
-
-      {reportData?.summary && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6}>
-            <Paper
-              sx={{
-                p: 3,
-                textAlign: 'center',
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, rgba(0,168,150,0.08) 0%, rgba(0,168,150,0.02) 100%)',
-                border: '1px solid rgba(0,168,150,0.15)',
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
-                <Receipt sx={{ color: colors.primary }} />
-                <Typography variant="h5" fontWeight={700} sx={{ color: colors.primary }}>
-                  {reportData.summary.total_transactions}
-                </Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary">Total Transactions ({period})</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Paper
-              sx={{
-                p: 3,
-                textAlign: 'center',
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, rgba(252,163,17,0.08) 0%, rgba(252,163,17,0.02) 100%)',
-                border: '1px solid rgba(252,163,17,0.15)',
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
-                <TrendingUp sx={{ color: colors.secondary }} />
-                <Typography variant="h5" fontWeight={700} sx={{ color: colors.secondary }}>
-                  {formatPrice(reportData.summary.total_revenue)}
-                </Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary">Total Revenue ({period})</Typography>
-            </Paper>
-          </Grid>
-        </Grid>
-      )}
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 12 }}>
-          <CircularProgress size={48} sx={{ color: colors.primary }} />
+    <Box sx={{ maxWidth: 1450, mx: 'auto', color: ink }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.5} sx={{ mb: 2.4 }}>
+        <Box>
+          <Typography component="h1" sx={{ fontSize: { xs: 22, sm: 27 }, fontWeight: 700, letterSpacing: '-.03em' }}>Hello, {user?.full_name || user?.name || 'Admin'}</Typography>
+          <Typography sx={{ color: muted, fontSize: 12, mt: 0.25 }}>Your sales dashboard</Typography>
         </Box>
-      ) : (
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <Paper className="chart-container">
-              {chartType === 'sales_category' ? (
-                <Box sx={{ maxWidth: 500, mx: 'auto' }}>
-                  <Pie data={getChartData()} options={chartOptions} />
-                </Box>
-              ) : (
-                <Bar data={getChartData()} options={barOptions} />
-              )}
-            </Paper>
+        <Typography sx={{ color: '#08BFD3', fontSize: 12, fontWeight: 700 }}>{periodLabel}</Typography>
+      </Stack>
+
+      <Paper elevation={0} sx={{ ...panel, p: 1.6, mb: 2.2 }}>
+        <Grid container spacing={1.4} alignItems="center">
+          <Grid item xs={12} sm={4} md={3}>
+            <FormControl fullWidth size="small" sx={field}>
+              <InputLabel>Period</InputLabel>
+              <Select value={period} label="Period" onChange={(event) => setPeriod(event.target.value)}>
+                <MenuItem value="monthly">Monthly</MenuItem>
+                <MenuItem value="weekly">Last 7 days</MenuItem>
+                <MenuItem value="custom">Custom dates</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, maxHeight: 400, overflow: 'auto' }}>
-              <Typography variant="h6" gutterBottom>Data Table</Typography>
-              {reportData?.data?.map((item, idx) => (
-                <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px solid #eee' }}>
-                  <Typography variant="body2">{item.category || item.name}</Typography>
-                  <Typography variant="body2" fontWeight="bold">
-                    {chartType === 'sales_category' ? formatPrice(item.total_sales) : `${item.total_quantity} sold`}
-                  </Typography>
-                </Box>
-              ))}
-            </Paper>
-          </Grid>
+          {period !== 'weekly' && (
+            <Grid item xs={12} sm={4} md={3}>
+              <TextField fullWidth size="small" type="month" label={period === 'custom' ? 'Category/product month' : 'Month and year'} value={month} onChange={(event) => setMonth(event.target.value)} InputLabelProps={{ shrink: true }} error={invalidMonth} helperText={invalidMonth ? 'Choose a valid month.' : undefined} sx={field} />
+            </Grid>
+          )}
+          {period === 'custom' && (
+            <>
+              <Grid item xs={12} sm={4} md={3}><TextField fullWidth size="small" type="date" label="Start date" value={range.start} onChange={(event) => setRange((current) => ({ ...current, start: event.target.value }))} InputLabelProps={{ shrink: true }} sx={field} /></Grid>
+              <Grid item xs={12} sm={4} md={3}><TextField fullWidth size="small" type="date" label="End date" value={range.end} onChange={(event) => setRange((current) => ({ ...current, end: event.target.value }))} InputLabelProps={{ shrink: true }} sx={field} /></Grid>
+            </>
+          )}
+          {period !== 'custom' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a month to update every chart and metric</Typography></Grid>}
         </Grid>
+      </Paper>
+
+      {invalidRange && <Alert severity="error" sx={{ mb: 2 }}>End date must be the same as or later than start date.</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {loading ? <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 320 }}><CircularProgress sx={{ color: cyan }} /></Box> : reports && (
+        <>
+          <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+            <Grid item xs={12} md={7}>
+              <Panel title="Daily revenues" note={periodLabel}>
+                <Box sx={{ height: chartHeight }}>
+                  {dailyValues.some(Boolean) ? <Bar data={dailyBarData} options={cartesianOptions} /> : <Empty />}
+                </Box>
+              </Panel>
+            </Grid>
+            <Grid item xs={12} md={5}>
+              <Panel title="Sales by category" note={groupedLabel}>
+                <Box sx={{ height: chartHeight }}>
+                  {categoryValues.some(Boolean) ? <Radar data={radarData} options={{ ...chartBase, scales: { r: { beginAtZero: true, angleLines: { color: '#EDF0F6' }, grid: { color: '#EDF0F6' }, pointLabels: { color: muted, font: { size: 9 } }, ticks: { display: false } } } }} /> : <Empty />}
+                </Box>
+              </Panel>
+            </Grid>
+          </Grid>
+
+          <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+            <Grid item xs={12} sm={6} lg={3}><Metric label="Total revenue" value={money.format(totalRevenue)} note={periodLabel} color={pink} /></Grid>
+            <Grid item xs={12} sm={6} lg={3}><Metric label="Transactions" value={number.format(transactions)} note="Completed sales" color={cyan} /></Grid>
+            <Grid item xs={12} sm={6} lg={3}><Metric label="Average sale" value={money.format(averageSale)} note="Revenue per transaction" color={purple} /></Grid>
+            <Grid item xs={12} sm={6} lg={3}><Metric label="Top 10 units sold" value={number.format(itemsSold)} note={groupedLabel} color="#F2C866" /></Grid>
+          </Grid>
+
+          <Panel title="Period comparison" note={comparisonLabel} sx={{ mb: 1.5 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <Typography sx={{ fontSize: 11, color: muted }}>Current period</Typography>
+                <Typography sx={{ mt: 0.4, color: ink, fontSize: 18, fontWeight: 700 }}>
+                  {money.format(totalRevenue)}
+                </Typography>
+                <Typography sx={{ fontSize: 10, color: muted }}>
+                  {number.format(transactions)} transactions
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Typography sx={{ fontSize: 11, color: muted }}>Previous period</Typography>
+                <Typography sx={{ mt: 0.4, color: ink, fontSize: 18, fontWeight: 700 }}>
+                  {comparison ? money.format(previousRevenue) : '—'}
+                </Typography>
+                <Typography sx={{ fontSize: 10, color: muted }}>
+                  {comparison ? `${number.format(Number(comparison.total_transactions || 0))} transactions` : 'No comparison data'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Typography sx={{ fontSize: 11, color: muted }}>Revenue change</Typography>
+                <Typography sx={{ mt: 0.4, color: hasRevenueComparison ? (revenueChange >= 0 ? cyan : '#B54708') : muted, fontSize: 18, fontWeight: 700 }}>
+                  {revenueChangeLabel}
+                </Typography>
+                <Typography sx={{ fontSize: 10, color: muted }}>
+                  Compared with the previous date range of the same length
+                </Typography>
+              </Grid>
+            </Grid>
+          </Panel>
+
+          <Panel title="Sales Estimate — Next 7 Days" note="Based on the previous 30 complete days" sx={{ mb: 1.5 }}>
+            {forecastLoading ? (
+              <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 100 }}>
+                <CircularProgress size={24} sx={{ color: cyan }} />
+              </Box>
+            ) : forecastError ? (
+              <Alert severity="warning">{forecastError}</Alert>
+            ) : forecast?.status === 'invalid' ? (
+              <Alert severity="error">The sales history contains invalid values, so an estimate cannot be calculated.</Alert>
+            ) : forecast?.status !== 'available' ? (
+              <Alert severity="info">
+                Not enough sales history to estimate yet. Sales on at least 7 of the last 30 complete days are needed.
+                {typeof forecast?.salesDays === 'number' && ` Recorded sales days: ${forecast.salesDays} of 30.`}
+              </Alert>
+            ) : (
+              <>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <Typography sx={{ fontSize: 11, color: muted }}>Estimated sales</Typography>
+                    <Typography sx={{ mt: 0.4, color: cyan, fontSize: 22, fontWeight: 800 }}>
+                      {money.format(forecast.estimatedSales)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography sx={{ fontSize: 11, color: muted }}>Average daily sales</Typography>
+                    <Typography sx={{ mt: 0.4, color: ink, fontSize: 18, fontWeight: 700 }}>
+                      {money.format(forecast.averageDailySales)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography sx={{ fontSize: 11, color: muted }}>Days with sales</Typography>
+                    <Typography sx={{ mt: 0.4, color: ink, fontSize: 18, fontWeight: 700 }}>
+                      {forecast.salesDays} of 30
+                    </Typography>
+                  </Grid>
+                </Grid>
+                <Typography sx={{ mt: 1.5, fontSize: 10, color: muted }}>
+                  Estimate only, not a guarantee. Calculated as average daily revenue across the last 30 complete days multiplied by 7.
+                </Typography>
+              </>
+            )}
+          </Panel>
+
+          <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+            <Grid item xs={12} md={8}>
+              <Panel title="Revenue trend" note={periodLabel}>
+                <Box sx={{ height: { xs: 230, sm: 250 } }}>
+                  {dailyValues.some(Boolean) ? <Line data={dailyLineData} options={cartesianOptions} /> : <Empty />}
+                </Box>
+              </Panel>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Panel title="Top category share" note={groupedLabel}>
+                <Box sx={{ height: { xs: 230, sm: 250 }, position: 'relative' }}>
+                  {categoryValues.some(Boolean) ? (
+                    <>
+                      <Doughnut data={doughnutData} options={{ ...chartBase, cutout: '78%', layout: { padding: 7 } }} />
+                      <Box sx={{ position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', pointerEvents: 'none', textAlign: 'center' }}>
+                        <Typography sx={{ fontSize: 29, fontWeight: 300, color: ink }}>{leadingShare}%</Typography>
+                        <Typography sx={{ fontSize: 10, color: muted, maxWidth: 95, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{leadingCategory?.category}</Typography>
+                      </Box>
+                    </>
+                  ) : <Empty />}
+                </Box>
+              </Panel>
+            </Grid>
+          </Grid>
+
+          <Panel title="Best-selling products" note={groupedLabel}>
+            <Box sx={{ overflowX: 'auto' }}>
+              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', minWidth: 500, '& th': { color: muted, fontSize: 10, fontWeight: 500, textAlign: 'left', py: 1.2, borderBottom: '1px solid #EEF0F5' }, '& td': { fontSize: 11, color: '#626A77', py: 1.3, borderBottom: '1px solid #F3F4F8' } }}>
+                <thead><tr><th>Product</th><th>Category</th><th>Units sold</th><th>Revenue</th></tr></thead>
+                <tbody>
+                  {products.length ? products.map((product, index) => (
+                    <tr key={`${product.name}-${index}`}>
+                      <td><Stack direction="row" alignItems="center" spacing={1}><Box sx={{ width: 22, height: 22, bgcolor: colors[index % colors.length], borderRadius: '50%', opacity: 0.72 }} /><span>{product.name}</span></Stack></td>
+                      <td>{product.category || 'Uncategorized'}</td>
+                      <td>{number.format(Number(product.total_quantity || 0))}</td>
+                      <td>{money.format(Number(product.total_sales || 0))}</td>
+                    </tr>
+                  )) : <tr><td colSpan={4} style={{ textAlign: 'center', padding: 20 }}>No product sales for this period.</td></tr>}
+                </tbody>
+              </Box>
+            </Box>
+          </Panel>
+        </>
       )}
     </Box>
   );

@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const { authenticate, authorize } = require('../middleware/auth');
+const auditController = require('../controllers/audit.controller');
+
+router.get('/audit-logs', authenticate, authorize('admin'), auditController.list);
 
 router.get('/dashboard', authenticate, authorize('admin'), adminController.getDashboardStats);
 router.get('/pending-staff', authenticate, authorize('admin'), adminController.getPendingStaff);

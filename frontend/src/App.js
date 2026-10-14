@@ -20,6 +20,8 @@ import ChangePassword, {
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
+import AuditLogs from './pages/admin/AuditLogs';
+import BodegaInventory from './pages/staff/BodegaInventory';
 import AccountManagement from './pages/admin/AccountManagement';
 import ClientApprovals from './pages/admin/ClientApprovals';
 import StaffApprovals from './pages/admin/StaffApprovals';
@@ -30,8 +32,8 @@ import ProductMonitor from './pages/admin/ProductMonitor';
 // Staff pages
 import StaffDashboard from './pages/staff/Dashboard';
 import ProductManagement from './pages/staff/ProductManagement';
-import ReceiptManagement from './pages/staff/ReceiptManagement';
 import OrderManagement from './pages/staff/OrderManagement';
+import ReceiptManagement from './pages/staff/ReceiptManagement';
 import PromoManagement from './pages/staff/PromoManagement';
 import UserManagement from './pages/staff/UserManagement';
 import StaffSubmissions from './pages/staff/Submissions';
@@ -41,7 +43,6 @@ import UserDashboard from './pages/user/Dashboard';
 import OrderHistory from './pages/user/OrderHistory';
 import Profile from './pages/user/Profile';
 import Favorites from './pages/user/Favorites';
-import Checkout from './pages/user/Checkout';
 
 function App() {
   const location = useLocation();
@@ -159,6 +160,9 @@ function App() {
               ['admin']
             )}
           />
+          <Route path="/admin/audit-logs" element={dashboardPage(<AuditLogs />, ['admin'])} />
+          <Route path="/admin/inventory" element={dashboardPage(<BodegaInventory />, ['admin'])} />
+          <Route path="/staff/inventory" element={dashboardPage(<BodegaInventory />, ['staff'])} />
 
           <Route
             path="/admin/accounts"
@@ -292,14 +296,6 @@ function App() {
             path="/client/favorites"
             element={dashboardPage(
               <Favorites />,
-              ['client']
-            )}
-          />
-
-          <Route
-            path="/client/checkout"
-            element={dashboardPage(
-              <Checkout />,
               ['client']
             )}
           />

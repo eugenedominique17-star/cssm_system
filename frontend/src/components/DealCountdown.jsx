@@ -71,13 +71,13 @@ const DealCountdown = ({ endTime, compact = false }) => {
 
   // Urgent if less than 1 hour remaining or 0 days and 0 hours
   const isUrgent = timeRemaining.days === 0 && timeRemaining.hours < 1;
-  const accentColor = isUrgent ? "#F87171" : "#5EEAD4";
+  const accentColor = isUrgent ? "#F87171" : "#B9EBD0";
   const bgColor = isUrgent
     ? "rgba(248, 113, 113, 0.12)"
-    : "rgba(13, 148, 136, 0.15)";
+    : "rgba(8,127,91, 0.15)";
   const borderColor = isUrgent
     ? "rgba(248, 113, 113, 0.25)"
-    : "rgba(94, 234, 212, 0.25)";
+    : "rgba(185,235,208, 0.25)";
 
   if (compact) {
     return (
@@ -175,7 +175,7 @@ const DealCountdown = ({ endTime, compact = false }) => {
           <React.Fragment key={unit.label}>
             <Box
               sx={{
-                bgcolor: "#0F172A",
+                bgcolor: "#183D32",
                 border: `1px solid ${borderColor}`,
                 borderRadius: "10px",
                 minWidth: 46,
@@ -189,7 +189,7 @@ const DealCountdown = ({ endTime, compact = false }) => {
                 sx={{
                   fontSize: "1.15rem",
                   fontWeight: 900,
-                  color: "#F8FAFC",
+                  color: "#F7F5EC",
                   lineHeight: 1,
                   fontFamily: "monospace, sans-serif",
                 }}
@@ -198,7 +198,7 @@ const DealCountdown = ({ endTime, compact = false }) => {
               </Typography>
               <Typography
                 sx={{
-                  color: "#64748B",
+                  color: "#617B6C",
                   fontSize: "0.625rem",
                   fontWeight: 700,
                   mt: 0.5,

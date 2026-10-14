@@ -1,599 +1,316 @@
-import React, { useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
-import { useLocation, useNavigate } from "react-router-dom";
-
-import {
-  AssessmentRounded,
-  AccountCircleRounded,
-  DashboardRounded,
-  Inventory2Rounded,
-  LocalOfferRounded,
-  LogoutRounded,
-  MenuRounded as MenuIcon,
-  PeopleAltRounded,
-  ReceiptLongRounded,
-  ShoppingCartRounded,
-  StorefrontRounded,
-  CloseRounded,
-} from "@mui/icons-material";
-
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Avatar,
+  Alert,
   Box,
+  Button,
+  Chip,
   Divider,
-  Drawer,
   IconButton,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Paper,
+  Snackbar,
   Stack,
-  Tooltip,
   Typography,
-  useMediaQuery,
-} from "@mui/material";
+} from '@mui/material';
+import {
+  AssignmentRounded,
+  BarChartRounded,
+  CloseRounded,
+  DashboardRounded,
+  FavoriteBorderRounded,
+  HistoryRounded,
+  Inventory2Rounded,
+  LogoutRounded,
+  MenuRounded,
+  PeopleAltRounded,
+  PersonRounded,
+  ReceiptLongRounded,
+  SettingsRounded,
+  ShoppingBagRounded,
+  StorefrontRounded,
+  VerifiedRounded,
+} from '@mui/icons-material';
+import { useAuth } from '../contexts/AuthContext';
+import DashboardWelcome from './DashboardWelcome';
+import { useOrderStatusSSE } from '../hooks/useOrderStatusSSE';
 
-import { useTheme } from "@mui/material/styles";
+const roleLabels = {
+  admin: 'Administrator',
+  staff: 'Staff',
+  client: 'Client',
+};
 
-const drawerWidth = 272;
-const collapsedWidth = 82;
-const mobileDrawerWidth = 292;
-
-const navigation = {
+const navByRole = {
   admin: [
-    ["Dashboard", "/admin/dashboard", DashboardRounded],
-    ["Accounts", "/admin/accounts", PeopleAltRounded],
-    ["Staff Approvals", "/admin/approvals/staff", PeopleAltRounded],
-    ["Client Approvals", "/admin/approvals/clients", PeopleAltRounded],
-    ["Submissions", "/admin/approvals/submissions", Inventory2Rounded],
-    ["Reports", "/admin/reports", AssessmentRounded],
-    ["Product Monitor", "/admin/product-monitor", Inventory2Rounded],
+    { label: 'Inventory', href: '/admin/inventory', icon: Inventory2Rounded },
+    { label: 'Audit Log', href: '/admin/audit-logs', icon: HistoryRounded },
+    { label: 'Dashboard', href: '/admin/dashboard', icon: DashboardRounded },
+    { label: 'Accounts', href: '/admin/accounts', icon: PeopleAltRounded },
+    { label: 'Staff Approvals', href: '/admin/approvals/staff', icon: VerifiedRounded },
+    { label: 'Client Approvals', href: '/admin/approvals/clients', icon: PeopleAltRounded },
+    { label: 'Submissions', href: '/admin/approvals/submissions', icon: AssignmentRounded },
+    { label: 'Reports', href: '/admin/reports', icon: BarChartRounded },
+    { label: 'Product Monitor', href: '/admin/product-monitor', icon: Inventory2Rounded },
   ],
-
   staff: [
-    ["Dashboard", "/staff/dashboard", DashboardRounded],
-    ["Products", "/staff/products", Inventory2Rounded],
-    ["Order Management", "/staff/order-management", ShoppingCartRounded],
-    ["Receipts", "/staff/receipts", ReceiptLongRounded],
-    ["Promos", "/staff/promos", LocalOfferRounded],
-    ["Users", "/staff/users", PeopleAltRounded],
-    ["Submissions", "/staff/submissions", Inventory2Rounded],
+    { label: 'Inventory', href: '/staff/inventory', icon: Inventory2Rounded },
+    { label: 'Dashboard', href: '/staff/dashboard', icon: DashboardRounded },
+    { label: 'Products', href: '/staff/products', icon: Inventory2Rounded },
+    { label: 'Orders', href: '/staff/order-management', icon: ShoppingBagRounded },
+    { label: 'Receipts', href: '/staff/receipts', icon: ReceiptLongRounded },
+    { label: 'Promos', href: '/staff/promos', icon: BarChartRounded },
+    { label: 'Users', href: '/staff/users', icon: PeopleAltRounded },
+    { label: 'Submissions', href: '/staff/submissions', icon: AssignmentRounded },
   ],
-
   client: [
-    ["Dashboard", "/client/dashboard", DashboardRounded],
-    ["Walk-in Order", "/client/checkout", ShoppingCartRounded],
-    ["Order History", "/client/history", ReceiptLongRounded],
-    ["Favorites", "/client/favorites", StorefrontRounded],
-    ["Profile", "/client/profile", AccountCircleRounded],
+    { label: 'Dashboard', href: '/client/dashboard', icon: DashboardRounded },
+    { label: 'Purchase History', href: '/client/history', icon: HistoryRounded },
+    { label: 'Favorites', href: '/client/favorites', icon: FavoriteBorderRounded },
+    { label: 'Profile', href: '/client/profile', icon: PersonRounded },
   ],
 };
 
 const DashboardLayout = ({ children }) => {
-  const { user, logout } = useAuth();
-
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [purchaseNotification, setPurchaseNotification] = React.useState(null);
 
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const role = user?.role || (location.pathname.startsWith('/admin') ? 'admin' : location.pathname.startsWith('/staff') ? 'staff' : 'client');
+  const navItems = navByRole[role] || navByRole.client;
+  const isReportsPage = location.pathname.startsWith('/admin/reports');
+  const handlePurchaseNotification = React.useCallback((data) => {
+    if (data.status !== 'completed') return;
+    setPurchaseNotification({ ...data, ts: Date.now() });
+  }, []);
 
-  const role = String(user?.role || "client").toLowerCase();
-  const items = navigation[role] || navigation.client;
+  useOrderStatusSSE({
+    onUpdate: handlePurchaseNotification,
+    enabled: role === 'client' && location.pathname !== '/client/history',
+  });
 
-  const activeDrawerWidth = isDesktop
-    ? collapsed
-      ? collapsedWidth
-      : drawerWidth
-    : mobileDrawerWidth;
+  const currentPage =
+    navItems.find(
+      (item) =>
+        location.pathname === item.href ||
+        (item.href !== '/' && location.pathname.startsWith(`${item.href}/`))
+    ) || navItems[0];
 
-  const handleNavigate = (path) => {
-    setMobileOpen(false);
-    navigate(path);
-  };
+  const displayName = user?.full_name || user?.name || user?.email || 'User';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'U';
 
   const handleLogout = () => {
-    setMobileOpen(false);
     logout();
-    navigate("/");
+    navigate('/login', { replace: true });
   };
 
-  const getInitials = () => {
-    const name = String(user?.name || "").trim();
-
-    if (!name) {
-      return "U";
-    }
-
-    const parts = name.split(/\s+/).filter(Boolean);
-
-    if (parts.length === 1) {
-      return parts[0].charAt(0).toUpperCase();
-    }
-
-    return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
-  };
-
-  const getRoleLabel = () => {
-    if (role === "admin") return "Administrator";
-    if (role === "staff") return "Staff account";
-    return "Client account";
-  };
-
-  const drawerContent = (
+  const sidebar = (
     <Box
       sx={{
-        height: "100%",
+        height: '100%',
         minHeight: 0,
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
-        overflow: "hidden",
-        bgcolor: "#063F35",
-        color: "#F2FFFA",
-        borderRadius: { xs: 0, md: "22px" },
-        backgroundImage:
-          "radial-gradient(circle at 92% 8%, rgba(61, 211, 162, .22) 0 14%, transparent 15%), radial-gradient(circle at 8% 62%, rgba(15, 118, 110, .38) 0 17%, transparent 18%), linear-gradient(150deg, #075844 0%, #063F35 52%, #022E29 100%)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,.08)",
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'var(--sh-glass-raised)',
+        backdropFilter: 'blur(22px) saturate(125%)',
+        WebkitBackdropFilter: 'blur(22px) saturate(125%)',
+        border: '1px solid rgba(255,255,255,.85)',
+        borderRadius: { xs: 0, md: '26px' },
+        boxShadow: '0 16px 48px rgba(24,61,50,.08)',
       }}
     >
-      {/* =========================================================
-          BRAND / SIDEBAR HEADER
-      ========================================================= */}
       <Box
         sx={{
-          position: "relative",
-          px: collapsed && isDesktop ? 1.2 : 2,
-          pt: 2,
-          pb: 1.6,
-          transition: "padding .24s ease",
+          px: 2.5,
+          py: 2.2,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.2,
         }}
       >
         <Box
           sx={{
-            minHeight: 68,
-            display: "flex",
-            alignItems: "center",
-            gap: 1.2,
-            px: collapsed && isDesktop ? 0.8 : 1.1,
-            py: 1,
-            borderRadius: "16px",
-            bgcolor: "rgba(1, 45, 38, .28)",
-            border: "1px solid rgba(137, 255, 214, .15)",
-            transition: "all .22s ease",
+            width: 42,
+            height: 42,
+            borderRadius: 2.5,
+            display: 'grid',
+            placeItems: 'center',
+            background: 'linear-gradient(135deg, #066649 0%, #27AE80 100%)',
+            color: '#fff',
+            boxShadow: '0 12px 24px rgba(6,102,73,0.18)',
           }}
         >
-          <Tooltip
-            title={isDesktop ? (collapsed ? "Expand sidebar" : "Collapse sidebar") : "StoreHub"}
-            placement="right"
-            arrow
+          <StorefrontRounded sx={{ fontSize: 22 }} />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: '.12em',
+              textTransform: 'uppercase',
+              color: '#5F817B',
+            }}
           >
-            <IconButton
-              onClick={() => isDesktop && setCollapsed((previous) => !previous)}
-              aria-label={isDesktop ? (collapsed ? "Expand sidebar" : "Collapse sidebar") : "StoreHub"}
+            StoreHub
+          </Typography>
+          <Typography
+            sx={{
+              mt: 0.2,
+              fontSize: 15,
+              fontWeight: 800,
+              color: '#123D36',
+              lineHeight: 1.2,
+            }}
+          >
+            {roleLabels[role] || 'Dashboard'}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Divider sx={{ borderColor: '#E6F0EC' }} />
+
+      <List
+        aria-label="Dashboard navigation"
+        sx={{
+          px: 1.5,
+          py: 1.5,
+          flex: '1 1 0%',
+          minHeight: 0,
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+        }}
+        disablePadding
+      >
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentPage.href === item.href;
+
+          return (
+            <ListItemButton
+              key={item.href}
+              aria-current={isActive ? 'page' : undefined}
+              onClick={() => {
+                navigate(item.href);
+                setMobileOpen(false);
+              }}
               sx={{
-                width: 42,
-                height: 42,
-                flexShrink: 0,
-                display: "grid",
-                placeItems: "center",
-                borderRadius: "13px",
-                background:
-                  "linear-gradient(145deg, #0D6B55 0%, #0A4A40 100%)",
-                color: "#FFE27A",
-                boxShadow: "0 9px 20px rgba(0,0,0,.18)",
-                cursor: isDesktop ? "pointer" : "default",
-                transition: "transform .2s ease, background-color .2s ease",
-                "&:hover": {
-                  background: "linear-gradient(145deg, #16866B 0%, #0D5B4D 100%)",
-                  color: "#FFF1A8",
-                  transform: isDesktop ? "scale(1.06)" : "none",
+                borderRadius: '24px',
+                mb: 0.75,
+                px: 1.25,
+                py: 0.9,
+                bgcolor: isActive ? '#087F5B' : 'transparent',
+                color: isActive ? '#fff' : '#3D5B56',
+                boxShadow: isActive ? 'inset 0 0 0 1px rgba(6,102,73,0.12)' : 'none',
+                '&:hover': {
+                  bgcolor: isActive ? '#066649' : 'rgba(6,102,73,0.06)',
                 },
               }}
             >
-              <StorefrontRounded sx={{ fontSize: 23 }} />
-            </IconButton>
-          </Tooltip>
-
-          {!(collapsed && isDesktop) && (
-            <Box
-              sx={{
-                minWidth: 0,
-                flex: 1,
-              }}
-            >
-              <Typography
-                sx={{
-                  color: "#F4FFFB",
-                  fontSize: "1rem",
-                  fontWeight: 900,
-                  lineHeight: 1.05,
-                  letterSpacing: "-.03em",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+              <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
+                <Icon sx={{ fontSize: 20 }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={item.label}
+                primaryTypographyProps={{
+                  fontWeight: isActive ? 800 : 700,
+                  fontSize: 14,
+                  lineHeight: 1.3,
                 }}
-              >
-                StoreHub
-              </Typography>
+              />
+            </ListItemButton>
+          );
+        })}
+      </List>
 
-              <Typography
-                sx={{
-                  mt: 0.32,
-                  color: "#9ED0BF",
-                  fontSize: "0.59rem",
-                  fontWeight: 650,
-                  letterSpacing: ".025em",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                Store management workspace
-              </Typography>
-            </Box>
-          )}
-
-        </Box>
-
-        {!isDesktop && (
-          <IconButton
-            onClick={() => setMobileOpen(false)}
-            aria-label="Close dashboard menu"
-            sx={{
-              position: "absolute",
-              top: 27,
-              right: 27,
-              width: 34,
-              height: 34,
-              borderRadius: "10px",
-              color: "#C6E8DB",
-              bgcolor: "rgba(0,0,0,.18)",
-              border: "1px solid rgba(166, 231, 211, .2)",
-              "&:hover": {
-                bgcolor: "rgba(255,255,255,.12)",
-                color: "#FFFFFF",
-              },
-            }}
-          >
-            <CloseRounded sx={{ fontSize: 19 }} />
-          </IconButton>
-        )}
-      </Box>
-
-      {/* =========================================================
-          WORKSPACE NAVIGATION
-      ========================================================= */}
-      <Box
-        sx={{
-          px: collapsed && isDesktop ? 1.15 : 1.55,
-          pt: 0.9,
-          minHeight: 0,
-          overflowY: "auto",
-          flexShrink: 1,
-          scrollbarWidth: "thin",
-          "&::-webkit-scrollbar": { width: 5 },
-          "&::-webkit-scrollbar-thumb": {
-            borderRadius: 8,
-            bgcolor: "rgba(170, 236, 215, .25)",
-          },
-        }}
-      >
-        {!(collapsed && isDesktop) && (
-          <Typography
-            sx={{
-              px: 1.1,
-              mb: 0.8,
-              color: "#8BC5B2",
-              fontSize: "0.56rem",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: ".13em",
-            }}
-          >
-            Workspace
-          </Typography>
-        )}
-
-        <List sx={{ p: 0 }}>
-          {items.map(([label, path, Icon]) => {
-            const active = location.pathname.startsWith(path);
-
-            const button = (
-              <ListItemButton
-                key={path}
-                selected={active}
-                onClick={() => handleNavigate(path)}
-                sx={{
-                  position: "relative",
-                  minHeight: 46,
-                  mb: 0.45,
-                  px: collapsed && isDesktop ? 0.7 : 0.8,
-                  py: 0.55,
-                  justifyContent:
-                    collapsed && isDesktop ? "center" : "flex-start",
-                  borderRadius: "13px",
-                  color: active ? "#FFFFFF" : "#B5D8CB",
-                  overflow: "hidden",
-                  transition:
-                    "background-color .18s ease, color .18s ease, transform .18s ease",
-
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    left: 0,
-                    top: 10,
-                    bottom: 10,
-                    width: 3,
-                    borderRadius: "0 6px 6px 0",
-                    bgcolor: "#0F766E",
-                    opacity: active ? 1 : 0,
-                    transform: active ? "scaleY(1)" : "scaleY(.45)",
-                    transition: "all .2s ease",
-                  },
-
-                  "&.Mui-selected": {
-                    bgcolor: "linear-gradient(100deg, #1ECBA0 0%, #19B68F 100%)",
-                    color: "#FFFFFF",
-                    boxShadow: "0 10px 22px rgba(0,0,0,.16)",
-                  },
-
-                  "&.Mui-selected:hover": {
-                    bgcolor: "#1AB58E",
-                  },
-
-                  "&:hover": {
-                    bgcolor: active ? "#1AB58E" : "rgba(255,255,255,.08)",
-                    color: "#FFFFFF",
-                  },
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: collapsed && isDesktop ? 0 : 42,
-                    justifyContent: "center",
-                    color: "inherit",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 34,
-                      height: 34,
-                      display: "grid",
-                      placeItems: "center",
-                      borderRadius: "10px",
-                      bgcolor: active ? "rgba(255,255,255,.23)" : "rgba(255,255,255,.08)",
-                      transition: "all .18s ease",
-                    }}
-                  >
-                    <Icon sx={{ fontSize: 19 }} />
-                  </Box>
-                </ListItemIcon>
-
-                {!(collapsed && isDesktop) && (
-                  <ListItemText
-                    primary={label}
-                    primaryTypographyProps={{
-                      fontSize: "0.78rem",
-                      fontWeight: active ? 850 : 700,
-                      letterSpacing: "-.005em",
-                    }}
-                    sx={{ ml: 0.25 }}
-                  />
-                )}
-              </ListItemButton>
-            );
-
-            if (collapsed && isDesktop) {
-              return (
-                <Tooltip
-                  key={path}
-                  title={label}
-                  placement="right"
-                  arrow
-                >
-                  {button}
-                </Tooltip>
-              );
-            }
-
-            return button;
-          })}
-        </List>
-      </Box>
-
-      <Box sx={{ flexGrow: 1 }} />
-
-      {/* =========================================================
-          USER / ACCOUNT AREA
-      ========================================================= */}
-      <Box
-        sx={{
-          px: collapsed && isDesktop ? 1.15 : 1.55,
-          pb: 1.5,
-          flexShrink: 0,
-          bgcolor: "#063F35",
-        }}
-      >
-        <Divider
+      <Box sx={{ px: 2, pt: 1.5, pb: 'max(16px, env(safe-area-inset-bottom))', flexShrink: 0, borderTop: '1px solid #E6F0EC' }}>
+        <Box
           sx={{
-            mb: 1.35,
-            borderColor: "rgba(162, 225, 207, .18)",
+            border: '1px solid #DDECE7',
+            borderRadius: 2.5,
+            bgcolor: 'var(--sh-glass-bg)',
+            p: 1.5,
           }}
-        />
-
-        {collapsed && isDesktop ? (
-          <Tooltip
-            title={`${user?.name || "StoreHub User"} · ${getRoleLabel()}`}
-            placement="right"
-            arrow
-          >
-            <Box
+        >
+          <Stack direction="row" spacing={1.2} alignItems="center">
+            <Avatar
               sx={{
-                mb: 0.8,
-                display: "flex",
-                justifyContent: "center",
+                width: 34,
+                height: 34,
+                bgcolor: '#066649',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 800,
               }}
             >
-              <Avatar
+              {initials}
+            </Avatar>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography
                 sx={{
-                  width: 38,
-                  height: 38,
-                  bgcolor: "#0B6755",
-                  color: "#FFE27A",
-                  fontSize: "0.67rem",
-                  fontWeight: 900,
+                  fontWeight: 800,
+                  fontSize: 13,
+                  lineHeight: 1.2,
+                  color: '#183B36',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {getInitials()}
-              </Avatar>
-            </Box>
-          </Tooltip>
-        ) : (
-          <Box
-            sx={{
-              mb: 1,
-              p: 1.15,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              borderRadius: "13px",
-              bgcolor: "rgba(0, 30, 25, .25)",
-              border: "1px solid rgba(154, 225, 205, .16)",
-            }}
-          >
-            <Box sx={{ position: "relative" }}>
-              <Avatar
+                {displayName}
+              </Typography>
+              <Chip
+                label={roleLabels[role] || 'User'}
+                size="small"
                 sx={{
-                  width: 38,
-                  height: 38,
-                  bgcolor: "#0B6755",
-                  color: "#FFE27A",
-                  fontSize: "0.67rem",
-                  fontWeight: 900,
-                }}
-              >
-                {getInitials()}
-              </Avatar>
-
-              <Box
-                sx={{
-                  position: "absolute",
-                  right: -1,
-                  bottom: 0,
-                  width: 9,
-                  height: 9,
-                  borderRadius: "50%",
-                  bgcolor: "#22C55E",
-                  border: "2px solid #0A4A40",
+                  mt: 0.5,
+                  height: 22,
+                  bgcolor: '#D8F3E5',
+                  color: '#066649',
+                  fontWeight: 700,
+                  '& .MuiChip-label': { px: 0.8, fontSize: 11 },
                 }}
               />
             </Box>
+          </Stack>
 
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography
-                noWrap
-                sx={{
-                  color: "#F2FFFA",
-                  fontSize: "0.72rem",
-                  fontWeight: 850,
-                }}
-              >
-                {user?.name || "StoreHub User"}
-              </Typography>
-
-              <Typography
-                noWrap
-                sx={{
-                  mt: 0.12,
-                  color: "#9ED0BF",
-                  fontSize: "0.58rem",
-                  fontWeight: 650,
-                }}
-              >
-                {getRoleLabel()}
-              </Typography>
-            </Box>
-          </Box>
-        )}
-
-        {collapsed && isDesktop ? (
-          <Tooltip title="Logout" placement="right" arrow>
-            <ListItemButton
-              onClick={handleLogout}
-              sx={{
-                minHeight: 44,
-                px: 0.7,
-                justifyContent: "center",
-                borderRadius: "12px",
-                color: "#FF9D93",
-                "&:hover": {
-                  bgcolor: "rgba(255, 118, 105, .16)",
-                  color: "#FFC0B8",
-                },
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  color: "inherit",
-                  justifyContent: "center",
-                }}
-              >
-                <LogoutRounded sx={{ fontSize: 19 }} />
-              </ListItemIcon>
-            </ListItemButton>
-          </Tooltip>
-        ) : (
-          <ListItemButton
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={<LogoutRounded />}
             onClick={handleLogout}
-            aria-label="Sign out"
             sx={{
-              minHeight: 44,
-              px: 0.9,
-              borderRadius: "12px",
-              color: "#FF9D93",
-              border: "1px solid rgba(255, 157, 147, .3)",
-              bgcolor: "rgba(255, 118, 105, .08)",
-              "&:hover": {
-                bgcolor: "rgba(255, 118, 105, .16)",
-                color: "#FFC0B8",
+              mt: 1.5,
+              bgcolor: '#066649',
+              color: '#fff',
+              textTransform: 'none',
+              fontWeight: 800,
+              borderRadius: 1.75,
+              boxShadow: 'none',
+              '&:hover': {
+                bgcolor: '#07543E',
+                boxShadow: 'none',
               },
             }}
           >
-            <ListItemIcon
-              sx={{
-                minWidth: 41,
-                color: "inherit",
-                justifyContent: "center",
-              }}
-            >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  display: "grid",
-                  placeItems: "center",
-                  borderRadius: "9px",
-                  bgcolor: "rgba(255, 118, 105, .14)",
-                }}
-              >
-                <LogoutRounded sx={{ fontSize: 18 }} />
-              </Box>
-            </ListItemIcon>
-
-            <ListItemText
-              primary="Sign out"
-              primaryTypographyProps={{
-                fontSize: "0.76rem",
-                fontWeight: 800,
-              }}
-            />
-          </ListItemButton>
-        )}
+            Log out
+          </Button>
+        </Box>
       </Box>
     </Box>
   );
@@ -601,121 +318,193 @@ const DashboardLayout = ({ children }) => {
   return (
     <Box
       sx={{
-        display: "flex",
-        minHeight: "100vh",
-        bgcolor: "#F5F8F7",
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        minHeight: '100vh',
+        bgcolor: 'var(--sh-page-tint)',
       }}
     >
-      {/* =========================================================
-          MOBILE MENU TRIGGER
-      ========================================================= */}
-      {!isDesktop && (
-        <IconButton
-          onClick={() => setMobileOpen(true)}
-          aria-label="Open dashboard menu"
-          sx={{
-            position: "fixed",
-            zIndex: 1400,
-            top: 14,
-            left: 14,
-            width: 42,
-            height: 42,
-            borderRadius: "12px",
-            bgcolor: "#FFFFFF",
-            color: "#174E44",
-            border: "1px solid #DFE8E5",
-            boxShadow: "0 9px 24px rgba(28,55,48,.12)",
-            "&:hover": {
-              bgcolor: "#F1F7F4",
-              color: "#0F766E",
-            },
-          }}
-        >
-          <MenuIcon sx={{ fontSize: 21 }} />
-        </IconButton>
-      )}
-
-      {/* =========================================================
-          SIDEBAR
-      ========================================================= */}
-      <Drawer
-        variant={isDesktop ? "permanent" : "temporary"}
-        open={isDesktop || mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        ModalProps={{
-          keepMounted: true,
-        }}
-        PaperProps={{
-          sx: {
-            overflow: "visible",
-          },
-        }}
+      <Box
         sx={{
+          display: { xs: 'none', md: 'block' },
+          width: 280,
           flexShrink: 0,
-          px: { md: 1.8, lg: 2.2 },
-          py: { md: 1.8, lg: 2.2 },
-
-          "& .MuiDrawer-paper": {
-            width: activeDrawerWidth,
-            maxWidth: "88vw",
-            height: { xs: "100vh", md: "calc(100vh - 36px)", lg: "calc(100vh - 44px)" },
-            boxSizing: "border-box",
-            overflow: "visible",
-            border: 0,
-            borderRadius: { xs: 0, md: "22px" },
-            bgcolor: "#063F35",
-            position: isDesktop ? "sticky" : "fixed",
-            top: { xs: 0, md: 18 },
-            left: { xs: 0, md: 18 },
-            boxShadow: isDesktop
-              ? "0 18px 38px rgba(4, 45, 37, .25)"
-              : "12px 0 44px rgba(20,45,38,.16)",
-            transition:
-              "width .24s cubic-bezier(.4,0,.2,1), box-shadow .2s ease",
-          },
+          position: 'sticky',
+          top: 16,
+          m: 2,
+          mr: 0,
+          height: 'calc(100vh - 32px)',
+          '@supports (height: 100dvh)': { height: 'calc(100dvh - 32px)' },
+          alignSelf: 'flex-start',
         }}
       >
-        {drawerContent}
+        {sidebar}
+      </Box>
 
-      </Drawer>
+      <Box
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          position: 'sticky',
+          top: 0,
+          zIndex: 1300,
+          bgcolor: 'var(--sh-glass-raised)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid #E6F0EC',
+          px: 2,
+          py: 1.2,
+        }}
+      >
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 2,
+                display: 'grid',
+                placeItems: 'center',
+                background: 'linear-gradient(135deg, #066649 0%, #27AE80 100%)',
+                color: '#fff',
+              }}
+            >
+              <StorefrontRounded sx={{ fontSize: 18 }} />
+            </Box>
+            <Typography sx={{ fontWeight: 800, color: '#123D36' }}>
+              {currentPage.label}
+            </Typography>
+          </Stack>
 
-      {/* =========================================================
-          MAIN CONTENT
-      ========================================================= */}
+          <IconButton
+            aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={mobileOpen}
+            aria-controls={mobileOpen ? 'mobile-navigation' : undefined}
+            onClick={() => setMobileOpen((prev) => !prev)}
+            sx={{ color: '#066649' }}
+          >
+            {mobileOpen ? <CloseRounded /> : <MenuRounded />}
+          </IconButton>
+        </Stack>
+
+        {mobileOpen && (
+          <Box
+            id="mobile-navigation"
+            sx={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              height: 'calc(100vh - 100%)',
+              '@supports (height: 100dvh)': { height: 'calc(100dvh - 100%)' },
+              overflow: 'hidden',
+              bgcolor: 'var(--sh-glass-bg)',
+              borderBottom: '1px solid #E6F0EC',
+              boxShadow: '0 12px 30px rgba(6,102,73,0.08)',
+              zIndex: 10,
+            }}
+          >
+            {sidebar}
+          </Box>
+        )}
+      </Box>
+
       <Box
         component="main"
+        className="dashboard-content"
         sx={{
-          flexGrow: 1,
+          flex: 1,
           minWidth: 0,
-          width: {
-            xs: "100%",
-            md: `calc(100% - ${activeDrawerWidth + 36}px)`,
-          },
-          bgcolor: "#F4F8F6",
-          transition: "width .24s cubic-bezier(.4,0,.2,1)",
-
-          "& .page-container": {
-            width: "100%",
-            minHeight: "100vh",
-            px: {
-              xs: 1.4,
-              sm: 2.25,
-              md: 2.8,
-              lg: 3.25,
-            },
-            pt: {
-              xs: 7.5,
-              md: 3.5,
-            },
-            pb: {
-              xs: 2.5,
-              md: 3.5,
-            },
-          },
+          p: { xs: 2, md: 3 },
         }}
       >
-        {children}
+        {location.pathname.endsWith('/dashboard') && role !== 'staff' && <DashboardWelcome name={displayName} role={role} />}
+        {isReportsPage ? children : (
+        <Paper
+          elevation={0}
+          sx={{
+            border: '1px solid #E7F0ED',
+            borderRadius: 4,
+            bgcolor: 'var(--sh-glass-bg)',
+            p: { xs: 2, md: 3 },
+            boxShadow: '0 12px 30px rgba(6,102,73,0.04)',
+          }}
+        >
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            spacing={2}
+            sx={{ mb: 2 }}
+          >
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: '#5F817B',
+                  letterSpacing: '.12em',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                }}
+              >
+                Overview
+              </Typography>
+              <Typography
+                sx={{
+                  mt: 0.3,
+                  fontSize: { xs: 24, md: 30 },
+                  lineHeight: 1.15,
+                  fontWeight: 900,
+                  color: '#123D36',
+                }}
+              >
+                {currentPage.label}
+              </Typography>
+            </Box>
+
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip
+                icon={<SettingsRounded sx={{ fontSize: 16 }} />}
+                label={roleLabels[role] || 'Dashboard'}
+                sx={{
+                  bgcolor: '#D8F3E5',
+                  color: '#066649',
+                  borderRadius: 2,
+                  fontWeight: 800,
+                  '& .MuiChip-icon': { color: '#066649' },
+                }}
+              />
+            </Stack>
+          </Stack>
+
+          <Divider sx={{ mb: 2, borderColor: '#E6F0EC' }} />
+
+          {children}
+        </Paper>
+        )}
       </Box>
+
+      <Snackbar
+        key={purchaseNotification?.ts}
+        open={Boolean(purchaseNotification)}
+        autoHideDuration={10000}
+        onClose={() => setPurchaseNotification(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity="success"
+          onClose={() => setPurchaseNotification(null)}
+          sx={{ alignItems: 'center', boxShadow: '0 8px 28px rgba(24,61,50,.18)' }}
+        >
+          <Typography sx={{ fontWeight: 800 }}>Purchase completed</Typography>
+          <Typography variant="body2">
+            {purchaseNotification?.message}
+            {purchaseNotification?.receipt_number && ` · Receipt: ${purchaseNotification.receipt_number}`}
+            {purchaseNotification?.total_amount != null && ` · Total: ₱${Number(purchaseNotification.total_amount).toFixed(2)}`}
+            {purchaseNotification?.cashier_name && ` · Cashier: ${purchaseNotification.cashier_name}`}
+            {purchaseNotification?.completed_at && ` · ${new Date(purchaseNotification.completed_at).toLocaleString('en-PH')}`}
+          </Typography>
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

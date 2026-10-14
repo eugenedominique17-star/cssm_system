@@ -6,7 +6,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 router.get('/', authenticate, authorize('admin', 'staff'), transactionController.getAll);
 router.get('/my', authenticate, authorize('client'), transactionController.getMyTransactions);
 router.get('/walk-in-requests/my', authenticate, authorize('client'), transactionController.getMyWalkInRequests);
-router.post('/walk-in-requests/:id/cancel', authenticate, authorize('client'), transactionController.cancelWalkInRequest);
+router.post('/walk-in-requests/:id/cancel', authenticate, authorize('client', 'staff', 'admin'), transactionController.cancelWalkInRequest);
 router.get('/staff', authenticate, authorize('staff'), transactionController.getByStaff);
 router.post('/walk-in-request', authenticate, authorize('client'), transactionController.createWalkInRequest);
 router.post('/walk-in-request/staff', authenticate, authorize('staff'), transactionController.createStaffWalkInRequest);

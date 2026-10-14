@@ -51,9 +51,8 @@ const ProductManagement = () => {
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
+        ...(!editProduct ? { stock: 0 } : {}),
         category: formData.category,
-        ...(formData.expiry_date ? { expiry_date: formData.expiry_date } : {})
       };
 
       if (editProduct) {
@@ -221,7 +220,7 @@ const ProductManagement = () => {
       </Typography>
 
       <TableContainer component={Paper}>
-        <Table>
+        <Table sx={{ minWidth: 820 }}>
           <TableHead>
             <TableRow>
               <TableCell>Product</TableCell>
@@ -289,7 +288,7 @@ const ProductManagement = () => {
                 <TableCell>
                   {(() => {
                     const exp = getExpiryStatus(product.expiry_date);
-                    if (!exp) return <Typography variant="body2" sx={{ color: '#94A3B8' }}>—</Typography>;
+                    if (!exp) return <Typography variant="body2" sx={{ color: '#839B8C' }}>—</Typography>;
                     return <Chip label={exp.label} color={exp.color} size="small" sx={{ fontWeight: 600 }} />;
                   })()}
                 </TableCell>
@@ -336,11 +335,12 @@ const ProductManagement = () => {
           <TextField fullWidth label="Product Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} sx={{ mt: 2, mb: 2 }} required />
           <TextField fullWidth label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} sx={{ mb: 2 }} multiline rows={2} />
           <TextField fullWidth label="Price" type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} sx={{ mb: 2 }} required />
-          <TextField fullWidth label="Stock" type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} sx={{ mb: 2 }} required />
+          <Alert severity="info" sx={{ mb: 2 }}>New products start at zero stock. Use Inventory to restock products and set expiration dates in View Details.</Alert>
           <TextField fullWidth label="Category" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} sx={{ mb: 2 }} required />
           <TextField
             fullWidth
-            label="Expiry Date (optional)"
+            label="Expiry is managed per batch in Inventory"
+            disabled
             type="date"
             value={formData.expiry_date}
             onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}

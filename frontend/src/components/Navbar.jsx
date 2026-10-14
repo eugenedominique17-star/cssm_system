@@ -61,6 +61,15 @@ const Navbar = ({ homepage = false }) => {
     navigate(link);
   };
 
+  const handleHomepageSection = (sectionId) => {
+    setMobileAnchor(null);
+    setProfileAnchor(null);
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   const getDashboardLink = () => {
     if (isAdmin) return "/admin/dashboard";
     if (isStaff) return "/staff/dashboard";
@@ -148,7 +157,7 @@ const Navbar = ({ homepage = false }) => {
           link: "/client/dashboard",
         },
         {
-          label: "Order History",
+          label: "Purchase History",
           icon: <ReceiptLongRounded fontSize="small" />,
           link: "/client/history",
         },
@@ -205,14 +214,14 @@ const Navbar = ({ homepage = false }) => {
         return {
           label: "Client",
           color: "#047857",
-          bg: "#ECFDF5",
+          bg: "#D8F3E5",
         };
 
       default:
         return {
           label: role || "User",
-          color: "#475569",
-          bg: "#F1F5F9",
+          color: "#4C695A",
+          bg: "#EDF3E8",
         };
     }
   };
@@ -241,8 +250,8 @@ const Navbar = ({ homepage = false }) => {
 
           background:
             homepage
-              ? "rgba(255,255,255,.9)"
-              : "linear-gradient(90deg, rgba(250,252,251,.96) 0%, rgba(255,255,255,.98) 55%, rgba(248,251,250,.96) 100%)",
+              ? "var(--sh-glass-bg)"
+              : "var(--sh-glass-raised)",
 
           color: "#173D36",
 
@@ -258,6 +267,8 @@ const Navbar = ({ homepage = false }) => {
             width: "100%",
 
             maxWidth: 1440,
+            boxSizing: "border-box",
+            py: 1,
 
             mx: "auto",
 
@@ -299,7 +310,7 @@ const Navbar = ({ homepage = false }) => {
 
               mr: {
                 xs: 0,
-                md: 2.5,
+                md: 0.5,
               },
 
               transition: "transform .2s ease",
@@ -319,11 +330,11 @@ const Navbar = ({ homepage = false }) => {
 
                 borderRadius: "13px",
 
-                background: "linear-gradient(145deg, #174E44 0%, #0F766E 100%)",
+                background: "linear-gradient(145deg, #174E44 0%, #066649 100%)",
 
                 color: "#FDE68A",
 
-                boxShadow: "0 8px 20px rgba(15,118,110,.16)",
+                boxShadow: "0 8px 20px rgba(6,102,73,.16)",
 
                 position: "relative",
 
@@ -405,109 +416,62 @@ const Navbar = ({ homepage = false }) => {
             </Box>
           </Box>
 
-          {/* ================= DESKTOP NAV ================= */}
-
-          {!isDashboardRoute && isAuthenticated && (
+          {/* Role and homepage links share one wrapping navigation area. */}
+          {!isDashboardRoute && (isAuthenticated || homepage) ? (
             <Box
+              component="nav"
+              aria-label="Main navigation"
               sx={{
-                display: {
-                  xs: "none",
-                  lg: "flex",
-                },
-
-                flex: 1,
-
-                alignItems: "center",
-
-                gap: 0.5,
-
+                display: { xs: "none", lg: "flex" },
+                flex: "1 1 auto",
                 minWidth: 0,
+                alignItems: "center",
+                flexWrap: "wrap",
+                columnGap: 0.75,
+                rowGap: 0.5,
+                "& .MuiButton-root": {
+                  flexShrink: 0,
+                  minWidth: "max-content",
+                  minHeight: 40,
+                  px: 1.35,
+                  borderRadius: "10px",
+                  textTransform: "none",
+                  fontSize: "0.77rem",
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  color: "#63756F",
+                  "&:hover": { bgcolor: "#F4F7F6", color: "#066649" },
+                },
+                "& .MuiButton-startIcon": {
+                  flexShrink: 0,
+                  ml: 0,
+                  mr: 0.75,
+                  "& svg": { fontSize: 18 },
+                },
               }}
             >
-              {navItems.map((item) => {
-                const active = isActive(item.link);
-
-                return (
-                  <Button
-                    key={item.link}
-                    onClick={() => navigate(item.link)}
-                    startIcon={item.icon}
-                    disableRipple
-                    sx={{
-                      position: "relative",
-
-                      minHeight: 40,
-
-                      px: 1.35,
-
-                      borderRadius: "10px",
-
-                      textTransform: "none",
-
-                      fontSize: "0.77rem",
-
-                      fontWeight: active ? 800 : 700,
-
-                      whiteSpace: "nowrap",
-
-                      color: active ? "#0F766E" : "#63756F",
-
-                      bgcolor: active ? "#EDF8F4" : "transparent",
-
-                      transition: "all .18s ease",
-
-                      "& .MuiButton-startIcon": {
-                        mr: 0.65,
-
-                        "& svg": {
-                          fontSize: 18,
-                        },
-                      },
-
-                      "&::after": active
-                        ? {
-                            content: '""',
-
-                            position: "absolute",
-
-                            bottom: -3,
-
-                            left: "50%",
-
-                            width: 18,
-                            height: 2.5,
-
-                            transform: "translateX(-50%)",
-
-                            borderRadius: 10,
-
-                            bgcolor: "#0F766E",
-                          }
-                        : {},
-
-                      "&:hover": {
-                        bgcolor: active ? "#E5F5F0" : "#F4F7F6",
-
-                        color: "#0F766E",
-                      },
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
+              {isAuthenticated && navItems.map(item => (
+                <Button
+                  key={item.link}
+                  onClick={() => handleNavigate(item.link)}
+                  startIcon={item.icon}
+                  aria-current={isActive(item.link) ? "page" : undefined}
+                  disableRipple
+                  sx={isActive(item.link) ? { "&&": { color: "#066649", bgcolor: "#EDF8F4", fontWeight: 800 } } : undefined}
+                >
+                  {item.label}
+                </Button>
+              ))}
+              {homepage && [
+                ["Home", "home-section", <HomeRounded fontSize="small" />],
+                ["Services", "services-section", <StorefrontRounded fontSize="small" />],
+              ].map(([label, sectionId, icon]) => (
+                <Button key={sectionId} onClick={() => handleHomepageSection(sectionId)} startIcon={icon} disableRipple>
+                  {label}
+                </Button>
+              ))}
             </Box>
-          )}
-
-          {/* spacer for public pages */}
-
-          {!isAuthenticated && (
-            <Box
-              sx={{
-                flex: 1,
-              }}
-            />
-          )}
+          ) : <Box sx={{ flex: 1 }} />}
 
           {/* ================= RIGHT SIDE ================= */}
 
@@ -517,6 +481,7 @@ const Navbar = ({ homepage = false }) => {
             alignItems="center"
             sx={{
               ml: "auto",
+              flexShrink: 0,
             }}
           >
             {/* ================= AUTHENTICATED USER ================= */}
@@ -546,9 +511,9 @@ const Navbar = ({ homepage = false }) => {
 
                   border: "1px solid #DFE8E5",
 
-                  bgcolor: "#FFFFFF",
+                  bgcolor: "var(--sh-glass-bg)",
 
-                  boxShadow: "0 4px 12px rgba(15,23,42,.035)",
+                  boxShadow: "0 4px 12px rgba(24,61,50,.035)",
 
                   transition: "all .2s ease",
 
@@ -557,7 +522,7 @@ const Navbar = ({ homepage = false }) => {
 
                     bgcolor: "#F8FBFA",
 
-                    boxShadow: "0 7px 18px rgba(15,23,42,.055)",
+                    boxShadow: "0 7px 18px rgba(24,61,50,.055)",
                   },
                 }}
               >
@@ -701,9 +666,9 @@ const Navbar = ({ homepage = false }) => {
                   boxShadow: "0 7px 18px rgba(23,78,68,.16)",
 
                   "&:hover": {
-                    bgcolor: "#0F766E",
+                    bgcolor: "#066649",
 
-                    boxShadow: "0 9px 22px rgba(15,118,110,.2)",
+                    boxShadow: "0 9px 22px rgba(6,102,73,.2)",
                   },
                 }}
               >
@@ -713,8 +678,10 @@ const Navbar = ({ homepage = false }) => {
 
             {/* ================= MOBILE MENU BUTTON ================= */}
 
-            {!isDashboardRoute && isAuthenticated && (
+            {!isDashboardRoute && (isAuthenticated || homepage) && (
               <IconButton
+                aria-label="Open navigation menu"
+                aria-expanded={Boolean(mobileAnchor)}
                 onClick={(event) => setMobileAnchor(event.currentTarget)}
                 sx={{
                   display: {
@@ -736,7 +703,7 @@ const Navbar = ({ homepage = false }) => {
                   "&:hover": {
                     bgcolor: "#EDF5F2",
 
-                    color: "#0F766E",
+                    color: "#066649",
                   },
                 }}
               >
@@ -782,7 +749,7 @@ const Navbar = ({ homepage = false }) => {
 
             border: "1px solid #DEE7E4",
 
-            bgcolor: "#FFFFFF",
+            bgcolor: "var(--sh-glass-bg)",
 
             boxShadow: "0 18px 45px rgba(27,51,44,.13)",
           },
@@ -903,7 +870,7 @@ const Navbar = ({ homepage = false }) => {
             "&:hover": {
               bgcolor: "#F2F7F5",
 
-              color: "#0F766E",
+              color: "#066649",
             },
           }}
         >
@@ -916,7 +883,7 @@ const Navbar = ({ homepage = false }) => {
               sx={{
                 fontSize: 19,
 
-                color: "#0F766E",
+                color: "#066649",
               }}
             />
           </ListItemIcon>
@@ -942,7 +909,7 @@ const Navbar = ({ homepage = false }) => {
               "&:hover": {
                 bgcolor: "#F2F7F5",
 
-                color: "#0F766E",
+                color: "#066649",
               },
             }}
           >
@@ -955,7 +922,7 @@ const Navbar = ({ homepage = false }) => {
                 sx={{
                   fontSize: 19,
 
-                  color: "#64748B",
+                  color: "#617B6C",
                 }}
               />
             </ListItemIcon>
@@ -1089,7 +1056,7 @@ const Navbar = ({ homepage = false }) => {
 
             borderRadius: "10px",
 
-            color: location.pathname === "/" ? "#0F766E" : "#465B55",
+            color: location.pathname === "/" ? "#066649" : "#465B55",
 
             bgcolor: location.pathname === "/" ? "#EFF8F5" : "transparent",
 
@@ -1107,12 +1074,42 @@ const Navbar = ({ homepage = false }) => {
               sx={{
                 fontSize: 19,
 
-                color: location.pathname === "/" ? "#0F766E" : "#71837D",
+                color: location.pathname === "/" ? "#066649" : "#71837D",
               }}
             />
           </ListItemIcon>
           Home
         </MenuItem>
+
+        {homepage && (
+          <MenuItem
+            onClick={() => handleHomepageSection("services-section")}
+            sx={{
+              py: 1,
+              borderRadius: "10px",
+              color: "#465B55",
+              fontSize: "0.76rem",
+              fontWeight: 700,
+              "&:hover": {
+                bgcolor: "#F5F8F7",
+              },
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: "35px !important",
+              }}
+            >
+              <StorefrontRounded
+                sx={{
+                  fontSize: 19,
+                  color: "#71837D",
+                }}
+              />
+            </ListItemIcon>
+            Services
+          </MenuItem>
+        )}
 
         {navItems.length > 0 && (
           <Divider
@@ -1138,7 +1135,7 @@ const Navbar = ({ homepage = false }) => {
 
                 bgcolor: active ? "#EFF8F5" : "transparent",
 
-                color: active ? "#0F766E" : "#465B55",
+                color: active ? "#066649" : "#465B55",
 
                 fontSize: "0.76rem",
 
@@ -1158,7 +1155,7 @@ const Navbar = ({ homepage = false }) => {
                   sx: {
                     fontSize: 19,
 
-                    color: active ? "#0F766E" : "#71837D",
+                    color: active ? "#066649" : "#71837D",
                   },
                 })}
               </ListItemIcon>

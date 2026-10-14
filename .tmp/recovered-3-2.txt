@@ -1,0 +1,254 @@
+225:               <StaffDashboard />,
+226:               ['staff']
+227:             )}
+228:           />
+229: 
+230:           <Route
+231:             path="/staff/products"
+232:             element={dashboardPage(
+233:               <ProductManagement />,
+234:               ['staff']
+235:             )}
+236:           />
+237: 
+238:           <Route
+239:             path="/staff/order-management"
+240:             element={dashboardPage(
+241:               <OrderManagement />,
+242:               ['staff']
+243:             )}
+244:           />
+245: 
+246:           <Route
+247:             path="/staff/receipts"
+248:             element={dashboardPage(
+249:               <ReceiptManagement />,
+250:               ['staff']
+251:             )}
+252:           />
+253: 
+254:           <Route
+255:             path="/staff/promos"
+256:             element={dashboardPage(
+257:               <PromoManagement />,
+258:               ['staff']
+259:             )}
+260:           />
+261: 
+262:           <Route
+263:             path="/staff/users"
+264:             element={dashboardPage(
+265:               <UserManagement />,
+266:               ['staff']
+267:             )}
+268:           />
+269: 
+270:           <Route
+271:             path="/staff/submissions"
+272:             element={dashboardPage(
+273:               <StaffSubmissions />,
+274:               ['staff']
+275:             )}
+276:           />
+277: 
+278:           {/* =====================================
+279:               CLIENT ROUTES
+280:           ===================================== */}
+281: 
+282:           <Route
+283:             path="/client/dashboard"
+284:             element={dashboardPage(
+285:               <UserDashboard />,
+286:               ['client']
+287:             )}
+288:           />
+289: 
+290:           <Route
+291:             path="/client/history"
+292:             element={dashboardPage(
+293:               <OrderHistory />,
+294:               ['client']
+295:             )}
+296:           />
+297: 
+298:           <Route
+299:             path="/client/favorites"
+300:             element={dashboardPage(
+301:               <Favorites />,
+302:               ['client']
+303:             )}
+304:           />
+305: 
+306:           <Route
+307:             path="/client/profile"
+308:             element={dashboardPage(
+309:               <Profile />,
+310:               ['client']
+311:             )}
+312:           />
+313:         </Routes>
+314:       </Box>
+315: 
+74-  const checkoutRequest = useRef(null);
+75-  const checkoutBusy = useRef(false);
+76-  const [transactions, setTransactions] = useState([]);
+77:  const [walkInRequests, setWalkInRequests] = useState([]);
+78-  const [products, setProducts] = useState([]);
+79-  const [users, setUsers] = useState([]);
+80-
+--
+87-  const [viewDialog, setViewDialog] = useState(false);
+88-
+89-  const [selectedTransaction, setSelectedTransaction] = useState(null);
+90:  const [walkInRequestId, setWalkInRequestId] = useState(null);
+91-  const [tenderedAmount, setTenderedAmount] = useState("");
+92-
+93-  const [search, setSearch] = useState("");
+--
+141-          setLoading(true);
+142-        }
+143-
+144:        const [transactionsResponse, productsResponse, usersResponse, walkInResponse] =
+145-          await Promise.all([
+146-            API.get("/transactions"),
+147-            API.get("/products?active=true"),
+--
+161-
+162-        setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
+163-        setWalkInRequests(
+164:          Array.isArray(walkInResponse.data) ? walkInResponse.data : [],
+165-        );
+166-      } catch (error) {
+167-        console.error("Failed to load receipt data:", error);
+--
+465-      }
+466-      payload.request_id = checkoutRequest.current.id;
+467-
+468:      const response = walkInRequestId
+469:        ? await API.post(`/transactions/walk-in-requests/${walkInRequestId}/complete`, {
+470-            payment_method: selectedPaymentMethod,
+471-            tendered_amount: Number(tenderedAmount),
+472-          })
+--
+542-    0,
+543-  );
+544-
+545:  const walkInCount = transactions.filter(
+546-    (transaction) => !transaction.user_name,
+547-  ).length;
+548-
+549:  const registeredClientCount = transactions.length - walkInCount;
+550-
+551-  /* =========================================================
+552-     SEARCH + FILTER
+--
+935-        ))}
+936-      </Grid>
+937-
+938:      {walkInRequests.length > 0 && (
+939-        <Paper
+940-          className="no-print"
+941-          elevation={0}
+--
+956-          >
+957-            <Box>
+958-              <Typography sx={{ color: "#92400E", fontSize: 17, fontWeight: 850 }}>
+959:                Pending Walk-in Requests
+960-              </Typography>
+961-              <Typography sx={{ color: "#B45309", fontSize: 12.5, mt: 0.3 }}>
+962-                Load a client request into the cashier form when they arrive at the store.
+963-              </Typography>
+964-            </Box>
+965:            <Chip label={`${walkInRequests.length} pending`} size="small" sx={{ alignSelf: { xs: "flex-start", sm: "center" }, fontWeight: 800, color: "#92400E", bgcolor: "#FEF3C7" }} />
+966-          </Stack>
+967-
+968-          <Stack spacing={1}>
+969:            {walkInRequests.map((request) => (
+970-              <Stack
+971-                key={request.id}
+972-                direction={{ xs: "column", sm: "row" }}
+--
+1235-
+1236-                  <MenuItem value="registered">Registered Clients</MenuItem>
+1237-
+1238:                  <MenuItem value="walkin">Walk-in Customers</MenuItem>
+1239-                </Select>
+1240-              </FormControl>
+1241-            </Stack>
+--
+1417-                            fontWeight: 650,
+1418-                          }}
+1419-                        >
+1420:                          {transaction.user_name || "Walk-in Customer"}
+1421-                        </Typography>
+1422-                      </Stack>
+1423-                    </TableCell>
+--
+2430-
+2431-                    [
+2432-                      "Customer",
+2433:                      selectedTransaction.user_name || "Walk-in Customer",
+2434-                    ],
+2435-
+2436-                    ["Payment", "Cash"],
+frontend/src/pages/user/Checkout.jsx-17-} from '@mui/icons-material';
+frontend/src/pages/user/Checkout.jsx-18-import { useNavigate } from 'react-router-dom';
+frontend/src/pages/user/Checkout.jsx-19-import API from '../../api/axios';
+frontend/src/pages/user/Checkout.jsx:20:import { useCart } from '../../contexts/CartContext';
+frontend/src/pages/user/Checkout.jsx-21-
+frontend/src/pages/user/Checkout.jsx-22-const Checkout = () => {
+frontend/src/pages/user/Checkout.jsx-23-  const navigate = useNavigate();
+frontend/src/pages/user/Checkout.jsx:24:  const { items, total, updateQuantity, removeFromCart, clearCart } = useCart();
+frontend/src/pages/user/Checkout.jsx-25-  const [submitting, setSubmitting] = useState(false);
+frontend/src/pages/user/Checkout.jsx-26-  const [error, setError] = useState('');
+frontend/src/pages/user/Checkout.jsx-27-  const [success, setSuccess] = useState('');
+--
+frontend/src/pages/user/Checkout.jsx-36-    setSubmitting(true);
+frontend/src/pages/user/Checkout.jsx-37-    setError('');
+frontend/src/pages/user/Checkout.jsx-38-    try {
+frontend/src/pages/user/Checkout.jsx:39:      const response = await API.post('/transactions/walk-in-request', {
+frontend/src/pages/user/Checkout.jsx-40-        items: items.map((item) => ({ product_id: item.id, quantity: item.quantity })),
+frontend/src/pages/user/Checkout.jsx-41-      });
+frontend/src/pages/user/Checkout.jsx:42:      clearCart();
+frontend/src/pages/user/Checkout.jsx-43-      setSuccess(response.data.message || 'Walk-in request submitted successfully.');
+frontend/src/pages/user/Checkout.jsx-44-    } catch (requestError) {
+frontend/src/pages/user/Checkout.jsx:45:      setError(requestError.response?.data?.message || 'Unable to submit walk-in request.');
+frontend/src/pages/user/Checkout.jsx-46-    } finally {
+frontend/src/pages/user/Checkout.jsx-47-      setSubmitting(false);
+frontend/src/pages/user/Checkout.jsx-48-    }
+--
+frontend/src/pages/user/Checkout.jsx-91-                  <IconButton size="small" onClick={() => updateQuantity(item.id, item.quantity + 1)}><AddRounded fontSize="small" /></IconButton>
+frontend/src/pages/user/Checkout.jsx-92-                </Stack>
+frontend/src/pages/user/Checkout.jsx-93-                <Typography sx={{ width: 82, textAlign: 'right', fontWeight: 800 }}>{formatPrice(item.product.price * item.quantity)}</Typography>
+frontend/src/pages/user/Checkout.jsx:94:                <IconButton color="error" onClick={() => removeFromCart(item.id)} aria-label={`Remove ${item.product.name}`}><DeleteOutlineRounded /></IconButton>
+frontend/src/pages/user/Checkout.jsx-95-              </Box>
+frontend/src/pages/user/Checkout.jsx-96-            ))}
+frontend/src/pages/user/Checkout.jsx-97-            <Divider sx={{ my: 1 }} />
+--
+frontend/src/pages/user/Checkout.jsx-104-          <Paper elevation={0} sx={{ p: 3, border: '1px solid #A7F3D0', bgcolor: '#F0FDF4', borderRadius: 3 }}>
+frontend/src/pages/user/Checkout.jsx-105-            <Typography sx={{ fontWeight: 800, color: '#065F46' }}>Pay in store</Typography>
+frontend/src/pages/user/Checkout.jsx-106-            <Typography sx={{ color: '#047857', fontSize: 13.5, mt: 0.5 }}>
+frontend/src/pages/user/Checkout.jsx:107:              This is a walk-in order request only. No online payment is collected. A cashier will confirm the order and accept payment at the counter.
+frontend/src/pages/user/Checkout.jsx-108-            </Typography>
+frontend/src/pages/user/Checkout.jsx-109-          </Paper>
+frontend/src/pages/user/Checkout.jsx-110-
+--
+frontend/src/pages/user/Favorites.jsx-13-import API from "../../api/axios";
+frontend/src/pages/user/Favorites.jsx-14-import ProductCard from "../../components/ProductCard";
+frontend/src/pages/user/Favorites.jsx-15-import { useFavorites } from "../../hooks/useFavorites";
+frontend/src/pages/user/Favorites.jsx:16:import { useCart } from "../../contexts/CartContext";
+frontend/src/pages/user/Favorites.jsx-17-
+frontend/src/pages/user/Favorites.jsx-18-const Favorites = () => {
+frontend/src/pages/user/Favorites.jsx-19-  const navigate = useNavigate();
+frontend/src/pages/user/Favorites.jsx:20:  const { addToCart } = useCart();
+frontend/src/pages/user/Favorites.jsx-21-  const { favorites, toggleFavorite, isFavorited } = useFavorites();
+frontend/src/pages/user/Favorites.jsx-22-  const [products, setProducts] = useState([]);
+frontend/src/pages/user/Favorites.jsx-23-  const [loading, setLoading] = useState(true);
+--
+frontend/src/pages/user/Favorites.jsx-142-              product={product}
+frontend/src/pages/user/Favorites.jsx-143-              isFavorited={isFavorited(product.id)}
+frontend/src/pages/user/Favorites.jsx-144-              onFavoriteToggle={toggleFavorite}
+frontend/src/pages/user/Favorites.jsx:145:              onAddToCart={addToCart}
+frontend/src/pages/user/Favorites.jsx-146-            />
+frontend/src/pages/user/Favorites.jsx-147-          </Grid>
+frontend/src/pages/user/Favorites.jsx-148-        ))}

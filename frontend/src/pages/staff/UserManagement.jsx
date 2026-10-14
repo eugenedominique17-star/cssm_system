@@ -346,7 +346,7 @@ const UserManagement = () => {
           label="Active"
           size="small"
           sx={{
-            bgcolor: "#ECFDF5",
+            bgcolor: "#D8F3E5",
             color: "#047857",
             border: "1px solid #D1FAE5",
             fontWeight: 700,
@@ -413,7 +413,7 @@ const UserManagement = () => {
         label={clientRole ? "Client" : "Staff"}
         size="small"
         sx={{
-          bgcolor: clientRole ? "#ECFDF5" : "#EFF6FF",
+          bgcolor: clientRole ? "#D8F3E5" : "#EFF6FF",
           color: clientRole ? "#047857" : "#1D4ED8",
           border: `1px solid ${clientRole ? "#D1FAE5" : "#DBEAFE"}`,
           fontWeight: 700,
@@ -440,7 +440,7 @@ const UserManagement = () => {
     <Box
       sx={{
         minHeight: "100%",
-        bgcolor: "#F8FAFC",
+        bgcolor: "var(--sh-page-tint)",
         p: {
           xs: 2,
           sm: 3,
@@ -467,7 +467,7 @@ const UserManagement = () => {
         <Box>
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#183D32",
               fontSize: {
                 xs: "1.8rem",
                 md: "2.2rem",
@@ -483,7 +483,7 @@ const UserManagement = () => {
           <Typography
             sx={{
               mt: 0.8,
-              color: "#64748B",
+              color: "#617B6C",
               fontSize: 14,
             }}
           >
@@ -505,11 +505,11 @@ const UserManagement = () => {
               sx={{
                 width: 46,
                 height: 46,
-                bgcolor: "#FFFFFF",
-                border: "1px solid #E2E8F0",
+                bgcolor: "var(--sh-glass-bg)",
+                border: "1px solid #D5E5D9",
 
                 "&:hover": {
-                  bgcolor: "#F8FAFC",
+                  bgcolor: "var(--sh-page-tint)",
                 },
               }}
             >
@@ -548,7 +548,7 @@ const UserManagement = () => {
             value: createdAccounts.length,
             icon: <StorefrontRounded />,
             color: "#047857",
-            background: "#ECFDF5",
+            background: "#D8F3E5",
           },
           {
             label: "Clients",
@@ -579,13 +579,13 @@ const UserManagement = () => {
                 p: 2.4,
                 height: "100%",
                 borderRadius: 4,
-                border: "1px solid #E2E8F0",
-                bgcolor: "#FFFFFF",
+                border: "1px solid #D5E5D9",
+                bgcolor: "var(--sh-glass-bg)",
                 transition: "all .2s ease",
 
                 "&:hover": {
                   transform: "translateY(-3px)",
-                  boxShadow: "0 14px 35px rgba(15,23,42,.06)",
+                  boxShadow: "0 14px 35px rgba(24,61,50,.06)",
                 },
               }}
             >
@@ -607,7 +607,7 @@ const UserManagement = () => {
                 <Box>
                   <Typography
                     sx={{
-                      color: "#64748B",
+                      color: "#617B6C",
                       fontSize: 12,
                       fontWeight: 650,
                     }}
@@ -618,7 +618,7 @@ const UserManagement = () => {
                   <Typography
                     sx={{
                       mt: 0.2,
-                      color: "#0F172A",
+                      color: "#183D32",
                       fontSize: 24,
                       fontWeight: 900,
                     }}
@@ -658,7 +658,7 @@ const UserManagement = () => {
           mb: 3,
           overflow: "hidden",
           borderRadius: 4,
-          border: "1px solid #E2E8F0",
+          border: "1px solid #D5E5D9",
         }}
       >
         <Tabs
@@ -666,12 +666,12 @@ const UserManagement = () => {
           onChange={handleTabChange}
           variant="fullWidth"
           sx={{
-            borderBottom: "1px solid #F1F5F9",
+            borderBottom: "1px solid #EDF3E8",
 
             "& .MuiTab-root": {
               py: 2,
               minHeight: 64,
-              color: "#64748B",
+              color: "#617B6C",
               fontWeight: 750,
               textTransform: "none",
             },
@@ -732,7 +732,7 @@ const UserManagement = () => {
                   placeItems: "center",
                   borderRadius: 4,
 
-                  bgcolor: isClient ? "#ECFDF5" : "#EFF6FF",
+                  bgcolor: isClient ? "#D8F3E5" : "#EFF6FF",
 
                   color: isClient ? "#059669" : "#2563EB",
                 }}
@@ -747,7 +747,7 @@ const UserManagement = () => {
               <Box>
                 <Typography
                   sx={{
-                    color: "#0F172A",
+                    color: "#183D32",
                     fontSize: 18,
                     fontWeight: 850,
                   }}
@@ -761,7 +761,7 @@ const UserManagement = () => {
                   sx={{
                     mt: 0.8,
                     maxWidth: 650,
-                    color: "#64748B",
+                    color: "#617B6C",
                     fontSize: 13.5,
                     lineHeight: 1.7,
                   }}
@@ -847,7 +847,7 @@ const UserManagement = () => {
 
                 <Typography
                   sx={{
-                    color: "#64748B",
+                    color: "#617B6C",
                     fontSize: 12,
                   }}
                 >
@@ -883,14 +883,14 @@ const UserManagement = () => {
                 <Box
                   sx={{
                     p: 1.8,
-                    bgcolor: "#FFFFFF",
+                    bgcolor: "var(--sh-glass-bg)",
                     borderRadius: 3,
                     border: "1px solid #D1FAE5",
                   }}
                 >
                   <Typography
                     sx={{
-                      color: "#94A3B8",
+                      color: "#839B8C",
                       fontSize: 10.5,
                       fontWeight: 700,
                       textTransform: "uppercase",
@@ -903,7 +903,7 @@ const UserManagement = () => {
                   <Typography
                     sx={{
                       mt: 0.5,
-                      color: "#0F172A",
+                      color: "#183D32",
                       fontSize: 14,
                       fontWeight: 750,
                       wordBreak: "break-word",
@@ -948,7 +948,7 @@ const UserManagement = () => {
         elevation={0}
         sx={{
           borderRadius: 4,
-          border: "1px solid #E2E8F0",
+          border: "1px solid #D5E5D9",
           overflow: "hidden",
         }}
       >
@@ -959,12 +959,12 @@ const UserManagement = () => {
               md: 3,
             },
             py: 2.5,
-            borderBottom: "1px solid #F1F5F9",
+            borderBottom: "1px solid #EDF3E8",
           }}
         >
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#183D32",
               fontSize: 17,
               fontWeight: 850,
             }}
@@ -975,7 +975,7 @@ const UserManagement = () => {
           <Typography
             sx={{
               mt: 0.4,
-              color: "#94A3B8",
+              color: "#839B8C",
               fontSize: 12,
             }}
           >
@@ -1002,7 +1002,7 @@ const UserManagement = () => {
 
             <Typography
               sx={{
-                color: "#64748B",
+                color: "#617B6C",
                 fontSize: 12.5,
               }}
             >
@@ -1027,7 +1027,7 @@ const UserManagement = () => {
 
             <Typography
               sx={{
-                color: "#334155",
+                color: "#365C4B",
                 fontWeight: 750,
               }}
             >
@@ -1037,7 +1037,7 @@ const UserManagement = () => {
             <Typography
               sx={{
                 mt: 0.5,
-                color: "#94A3B8",
+                color: "#839B8C",
                 fontSize: 12,
               }}
             >
@@ -1051,17 +1051,17 @@ const UserManagement = () => {
                 minWidth: 850,
 
                 "& th": {
-                  bgcolor: "#F8FAFC",
-                  color: "#64748B",
+                  bgcolor: "var(--sh-page-tint)",
+                  color: "#617B6C",
                   fontSize: 11,
                   fontWeight: 800,
                   textTransform: "uppercase",
                   letterSpacing: ".04em",
-                  borderBottom: "1px solid #E2E8F0",
+                  borderBottom: "1px solid #D5E5D9",
                 },
 
                 "& td": {
-                  borderBottom: "1px solid #F1F5F9",
+                  borderBottom: "1px solid #EDF3E8",
                 },
               }}
             >
@@ -1092,7 +1092,7 @@ const UserManagement = () => {
                     <TableCell>
                       <Typography
                         sx={{
-                          color: "#0F172A",
+                          color: "#183D32",
                           fontFamily: "monospace",
                           fontSize: 13,
                           fontWeight: 800,
@@ -1105,7 +1105,7 @@ const UserManagement = () => {
                     <TableCell>
                       <Typography
                         sx={{
-                          color: "#334155",
+                          color: "#365C4B",
                           fontSize: 13,
                           fontWeight: 700,
                         }}
@@ -1117,7 +1117,7 @@ const UserManagement = () => {
                     <TableCell>
                       <Typography
                         sx={{
-                          color: "#64748B",
+                          color: "#617B6C",
                           fontSize: 12.5,
                         }}
                       >
@@ -1132,7 +1132,7 @@ const UserManagement = () => {
                     <TableCell>
                       <Typography
                         sx={{
-                          color: "#64748B",
+                          color: "#617B6C",
                           fontSize: 12.5,
                         }}
                       >
@@ -1159,11 +1159,11 @@ const UserManagement = () => {
                           onClick={() => handleRequestPasswordReset(account)}
                           disabled={resetRequestLoadingId === account.id}
                           sx={{
-                            color: "#0D9488",
+                            color: "#087F5B",
                             fontWeight: 700,
                             fontSize: 12,
                             textTransform: "none",
-                            "&:hover": { bgcolor: "rgba(13,148,136,.08)" },
+                            "&:hover": { bgcolor: "rgba(8,127,91,.08)" },
                           }}
                         >
                           {resetRequestLoadingId === account.id ? "Sending..." : "Request Reset"}
@@ -1261,7 +1261,7 @@ const UserManagement = () => {
           <Typography
             sx={{
               mb: 2,
-              color: "#94A3B8",
+              color: "#839B8C",
               fontSize: 10.5,
               fontWeight: 800,
               letterSpacing: ".08em",
@@ -1389,7 +1389,7 @@ const UserManagement = () => {
           <Typography
             sx={{
               mb: 2,
-              color: "#94A3B8",
+              color: "#839B8C",
               fontSize: 10.5,
               fontWeight: 800,
               letterSpacing: ".08em",
@@ -1486,7 +1486,7 @@ const UserManagement = () => {
               borderRadius: 3,
               textTransform: "none",
               fontWeight: 700,
-              color: "#64748B",
+              color: "#617B6C",
             }}
           >
             Cancel

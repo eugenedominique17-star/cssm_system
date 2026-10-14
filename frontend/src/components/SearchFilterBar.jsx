@@ -24,7 +24,7 @@ import {
 
 /**
  * Modern Dark Slate Search & Filter Bar Component
- * Theme: Dark Slate (#0F172A, #1E293B) with Teal Accent (#5EEAD4, #0D9488)
+ * Theme: Dark Slate (#183D32, #254D3F) with Teal Accent (#B9EBD0, #087F5B)
  */
 const SearchFilterBar = ({
   onSearch,
@@ -117,19 +117,19 @@ const SearchFilterBar = ({
         elevation={0}
         sx={{
           p: '6px 12px',
-          bgcolor: '#0F172A',
+          bgcolor: '#183D32',
           border: '1px solid',
-          borderColor: showFilters ? '#0D9488' : 'rgba(255, 255, 255, 0.1)',
+          borderColor: showFilters ? '#087F5B' : 'rgba(255, 255, 255, 0.1)',
           borderRadius: '14px',
           display: 'flex',
           gap: 1.5,
           alignItems: 'center',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: showFilters ? '0 0 15px rgba(13, 148, 136, 0.25)' : 'none',
+          boxShadow: showFilters ? '0 0 15px rgba(8,127,91, 0.25)' : 'none',
 
           '&:focus-within': {
-            borderColor: '#5EEAD4',
-            boxShadow: '0 0 20px rgba(94, 234, 212, 0.2)',
+            borderColor: '#B9EBD0',
+            boxShadow: '0 0 20px rgba(185,235,208, 0.2)',
           },
         }}
       >
@@ -143,18 +143,18 @@ const SearchFilterBar = ({
             disableUnderline: true,
             startAdornment: (
               <InputAdornment position="start">
-                <SearchRounded sx={{ color: '#64748B' }} />
+                <SearchRounded sx={{ color: '#617B6C' }} />
               </InputAdornment>
             ),
           }}
           sx={{
             '& .MuiInput-input': {
               py: 1,
-              color: '#F8FAFC',
+              color: '#F7F5EC',
               fontSize: '0.95rem',
               fontWeight: 500,
               '&::placeholder': {
-                color: '#64748B',
+                color: '#617B6C',
                 opacity: 1,
               },
             },
@@ -166,15 +166,15 @@ const SearchFilterBar = ({
             onClick={() => setShowFilters(!showFilters)}
             sx={{
               position: 'relative',
-              bgcolor: showFilters ? '#0D9488' : '#1E293B',
-              color: showFilters ? '#F8FAFC' : '#94A3B8',
+              bgcolor: showFilters ? '#087F5B' : '#254D3F',
+              color: showFilters ? '#F7F5EC' : '#839B8C',
               borderRadius: '10px',
               p: 1,
               transition: 'all 0.2s ease',
 
               '&:hover': {
-                bgcolor: showFilters ? '#0D9488' : 'rgba(255, 255, 255, 0.1)',
-                color: '#F8FAFC',
+                bgcolor: showFilters ? '#087F5B' : 'rgba(255, 255, 255, 0.1)',
+                color: '#F7F5EC',
               },
             }}
           >
@@ -185,8 +185,8 @@ const SearchFilterBar = ({
                   position: 'absolute',
                   top: -4,
                   right: -4,
-                  bgcolor: '#5EEAD4',
-                  color: '#0F172A',
+                  bgcolor: '#B9EBD0',
+                  color: '#183D32',
                   borderRadius: '50%',
                   width: 18,
                   height: 18,
@@ -195,7 +195,7 @@ const SearchFilterBar = ({
                   justifyContent: 'center',
                   fontSize: '0.65rem',
                   fontWeight: 900,
-                  boxShadow: '0 0 8px rgba(94, 234, 212, 0.8)',
+                  boxShadow: '0 0 8px rgba(185,235,208, 0.8)',
                 }}
               >
                 {activeFilterCount}
@@ -212,7 +212,7 @@ const SearchFilterBar = ({
           sx={{
             mt: 1.5,
             p: 2.5,
-            bgcolor: '#0F172A',
+            bgcolor: '#183D32',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             borderRadius: '16px',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
@@ -231,16 +231,16 @@ const SearchFilterBar = ({
               >
                 <Typography
                   variant="subtitle2"
-                  sx={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.85rem' }}
+                  sx={{ fontWeight: 700, color: '#F7F5EC', fontSize: '0.85rem' }}
                 >
                   Price Range
                 </Typography>
                 <Typography
                   variant="caption"
                   sx={{
-                    color: '#5EEAD4',
+                    color: '#B9EBD0',
                     fontWeight: 700,
-                    bgcolor: 'rgba(94, 234, 212, 0.1)',
+                    bgcolor: 'rgba(185,235,208, 0.1)',
                     px: 1,
                     py: 0.3,
                     borderRadius: '6px',
@@ -257,27 +257,27 @@ const SearchFilterBar = ({
                 max={maxPrice}
                 step={100}
                 sx={{
-                  color: '#0D9488',
+                  color: '#087F5B',
                   height: 6,
                   '& .MuiSlider-track': {
-                    bgcolor: '#5EEAD4',
+                    bgcolor: '#B9EBD0',
                     border: 'none',
                   },
                   '& .MuiSlider-thumb': {
                     height: 18,
                     width: 18,
-                    bgcolor: '#F8FAFC',
-                    border: '2px solid #0D9488',
+                    bgcolor: 'var(--sh-page-tint)',
+                    border: '2px solid #087F5B',
                     '&:hover, &.Mui-focusVisible, &.Mui-active': {
-                      boxShadow: '0 0 0 8px rgba(94, 234, 212, 0.16)',
+                      boxShadow: '0 0 0 8px rgba(185,235,208, 0.16)',
                     },
                   },
                   '& .MuiSlider-rail': {
-                    bgcolor: '#334155',
+                    bgcolor: '#365C4B',
                     opacity: 1,
                   },
                   '& .MuiSlider-markLabel': {
-                    color: '#64748B',
+                    color: '#617B6C',
                     fontSize: '0.7rem',
                   },
                 }}
@@ -288,7 +288,7 @@ const SearchFilterBar = ({
             <Box>
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.85rem', mb: 1 }}
+                sx={{ fontWeight: 700, color: '#F7F5EC', fontSize: '0.85rem', mb: 1 }}
               >
                 Sort By
               </Typography>
@@ -310,15 +310,15 @@ const SearchFilterBar = ({
                         cursor: 'pointer',
                         fontWeight: 600,
                         fontSize: '0.75rem',
-                        bgcolor: isSelected ? 'rgba(94, 234, 212, 0.15)' : '#1E293B',
-                        color: isSelected ? '#5EEAD4' : '#94A3B8',
+                        bgcolor: isSelected ? 'rgba(185,235,208, 0.15)' : '#254D3F',
+                        color: isSelected ? '#B9EBD0' : '#839B8C',
                         border: '1px solid',
-                        borderColor: isSelected ? 'rgba(94, 234, 212, 0.4)' : 'transparent',
+                        borderColor: isSelected ? 'rgba(185,235,208, 0.4)' : 'transparent',
                         transition: 'all 0.2s ease',
 
                         '&:hover': {
-                          bgcolor: isSelected ? 'rgba(94, 234, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                          color: isSelected ? '#5EEAD4' : '#F8FAFC',
+                          bgcolor: isSelected ? 'rgba(185,235,208, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                          color: isSelected ? '#B9EBD0' : '#F7F5EC',
                         },
                       }}
                     />
@@ -335,9 +335,9 @@ const SearchFilterBar = ({
                     checked={inStockOnly}
                     onChange={handleInStockToggle}
                     sx={{
-                      color: '#64748B',
+                      color: '#617B6C',
                       '&.Mui-checked': {
-                        color: '#5EEAD4',
+                        color: '#B9EBD0',
                       },
                     }}
                   />
@@ -358,12 +358,12 @@ const SearchFilterBar = ({
                 startIcon={<RefreshRounded />}
                 onClick={handleReset}
                 sx={{
-                  color: '#94A3B8',
+                  color: '#839B8C',
                   textTransform: 'none',
                   fontWeight: 700,
                   fontSize: '0.8rem',
                   '&:hover': {
-                    color: '#F8FAFC',
+                    color: '#F7F5EC',
                     bgcolor: 'transparent',
                   },
                 }}
@@ -375,17 +375,17 @@ const SearchFilterBar = ({
                 size="small"
                 onClick={() => setShowFilters(false)}
                 sx={{
-                  bgcolor: '#0D9488',
-                  color: '#F8FAFC',
+                  bgcolor: '#087F5B',
+                  color: '#F7F5EC',
                   fontWeight: 800,
                   fontSize: '0.8rem',
                   borderRadius: '8px',
                   textTransform: 'none',
                   px: 2.5,
-                  boxShadow: '0 4px 12px rgba(13, 148, 136, 0.3)',
+                  boxShadow: '0 4px 12px rgba(8,127,91, 0.3)',
 
                   '&:hover': {
-                    bgcolor: '#0D9488',
+                    bgcolor: '#087F5B',
                     filter: 'brightness(1.1)',
                   },
                 }}

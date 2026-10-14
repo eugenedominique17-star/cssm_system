@@ -146,9 +146,9 @@ const StaffSubmissions = () => {
 
     const config = configs[normalizedType] || {
       label: normalizedType.replaceAll("_", " ") || "Unknown",
-      color: "#475569",
-      background: "#F8FAFC",
-      border: "#E2E8F0",
+      color: "#4C695A",
+      background: "var(--sh-page-tint)",
+      border: "#D5E5D9",
       icon: <DescriptionOutlined />,
     };
 
@@ -185,7 +185,7 @@ const StaffSubmissions = () => {
       approved: {
         label: "Approved",
         color: "#047857",
-        background: "#ECFDF5",
+        background: "#D8F3E5",
         border: "#A7F3D0",
         icon: <CheckCircleRounded />,
       },
@@ -200,9 +200,9 @@ const StaffSubmissions = () => {
 
     const config = configs[normalizedStatus] || {
       label: normalizedStatus || "Unknown",
-      color: "#475569",
-      background: "#F8FAFC",
-      border: "#E2E8F0",
+      color: "#4C695A",
+      background: "var(--sh-page-tint)",
+      border: "#D5E5D9",
       icon: <DescriptionOutlined />,
     };
 
@@ -253,7 +253,7 @@ const StaffSubmissions = () => {
 
         <Typography
           sx={{
-            color: "#64748B",
+            color: "#617B6C",
             fontSize: 13,
           }}
         >
@@ -267,7 +267,7 @@ const StaffSubmissions = () => {
     <Box
       sx={{
         minHeight: "100%",
-        bgcolor: "#F8FAFC",
+        bgcolor: "var(--sh-page-tint)",
         p: {
           xs: 2,
           sm: 3,
@@ -294,7 +294,7 @@ const StaffSubmissions = () => {
         <Box>
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#183D32",
               fontSize: {
                 xs: "1.8rem",
                 md: "2.2rem",
@@ -310,7 +310,7 @@ const StaffSubmissions = () => {
           <Typography
             sx={{
               mt: 0.8,
-              color: "#64748B",
+              color: "#617B6C",
               fontSize: 14,
             }}
           >
@@ -331,9 +331,9 @@ const StaffSubmissions = () => {
                 },
                 width: 46,
                 height: 46,
-                bgcolor: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                boxShadow: "0 5px 16px rgba(15,23,42,.04)",
+                bgcolor: "var(--sh-glass-bg)",
+                border: "1px solid #D5E5D9",
+                boxShadow: "0 5px 16px rgba(24,61,50,.04)",
 
                 "&:hover": {
                   bgcolor: "#F0FDF4",
@@ -387,7 +387,7 @@ const StaffSubmissions = () => {
             value: approvedCount,
             icon: <CheckCircleRounded />,
             color: "#059669",
-            background: "#ECFDF5",
+            background: "#D8F3E5",
           },
           {
             label: "Rejected",
@@ -404,13 +404,13 @@ const StaffSubmissions = () => {
                 p: 2.4,
                 height: "100%",
                 borderRadius: 4,
-                bgcolor: "#FFFFFF",
-                border: "1px solid #E2E8F0",
+                bgcolor: "var(--sh-glass-bg)",
+                border: "1px solid #D5E5D9",
                 transition: "all .2s ease",
 
                 "&:hover": {
                   transform: "translateY(-3px)",
-                  boxShadow: "0 14px 35px rgba(15,23,42,.06)",
+                  boxShadow: "0 14px 35px rgba(24,61,50,.06)",
                 },
               }}
             >
@@ -433,7 +433,7 @@ const StaffSubmissions = () => {
                 <Box>
                   <Typography
                     sx={{
-                      color: "#64748B",
+                      color: "#617B6C",
                       fontSize: 12,
                       fontWeight: 650,
                     }}
@@ -444,7 +444,7 @@ const StaffSubmissions = () => {
                   <Typography
                     sx={{
                       mt: 0.2,
-                      color: "#0F172A",
+                      color: "#183D32",
                       fontSize: 24,
                       fontWeight: 900,
                     }}
@@ -469,8 +469,8 @@ const StaffSubmissions = () => {
             },
             textAlign: "center",
             borderRadius: 4,
-            bgcolor: "#FFFFFF",
-            border: "1px solid #E2E8F0",
+            bgcolor: "var(--sh-glass-bg)",
+            border: "1px solid #D5E5D9",
             background: "linear-gradient(145deg, #FFFFFF 0%, #F0FDF4 100%)",
           }}
         >
@@ -483,7 +483,7 @@ const StaffSubmissions = () => {
               display: "grid",
               placeItems: "center",
               borderRadius: 4,
-              bgcolor: "#ECFDF5",
+              bgcolor: "#D8F3E5",
               color: "#059669",
             }}
           >
@@ -496,7 +496,7 @@ const StaffSubmissions = () => {
 
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#183D32",
               fontSize: 18,
               fontWeight: 850,
             }}
@@ -509,7 +509,7 @@ const StaffSubmissions = () => {
               mt: 1,
               maxWidth: 520,
               mx: "auto",
-              color: "#64748B",
+              color: "#617B6C",
               fontSize: 13.5,
               lineHeight: 1.7,
             }}
@@ -523,9 +523,9 @@ const StaffSubmissions = () => {
           elevation={0}
           sx={{
             borderRadius: 4,
-            border: "1px solid #E2E8F0",
+            border: "1px solid #D5E5D9",
             overflow: "hidden",
-            bgcolor: "#FFFFFF",
+            bgcolor: "var(--sh-glass-bg)",
           }}
         >
           {/* TABLE HEADER */}
@@ -536,7 +536,7 @@ const StaffSubmissions = () => {
                 md: 3,
               },
               py: 2.4,
-              borderBottom: "1px solid #F1F5F9",
+              borderBottom: "1px solid #EDF3E8",
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -550,7 +550,7 @@ const StaffSubmissions = () => {
               <Box>
                 <Typography
                   sx={{
-                    color: "#0F172A",
+                    color: "#183D32",
                     fontSize: 16.5,
                     fontWeight: 850,
                   }}
@@ -561,7 +561,7 @@ const StaffSubmissions = () => {
                 <Typography
                   sx={{
                     mt: 0.2,
-                    color: "#94A3B8",
+                    color: "#839B8C",
                     fontSize: 11.5,
                   }}
                 >
@@ -577,18 +577,18 @@ const StaffSubmissions = () => {
                 minWidth: 900,
 
                 "& th": {
-                  bgcolor: "#F8FAFC",
-                  color: "#64748B",
+                  bgcolor: "var(--sh-page-tint)",
+                  color: "#617B6C",
                   fontSize: 10.5,
                   fontWeight: 800,
                   textTransform: "uppercase",
                   letterSpacing: ".05em",
-                  borderBottom: "1px solid #E2E8F0",
+                  borderBottom: "1px solid #D5E5D9",
                   py: 1.7,
                 },
 
                 "& td": {
-                  borderBottom: "1px solid #F1F5F9",
+                  borderBottom: "1px solid #EDF3E8",
                   py: 1.8,
                 },
               }}
@@ -618,7 +618,7 @@ const StaffSubmissions = () => {
                     <TableCell>
                       <Typography
                         sx={{
-                          color: "#0F172A",
+                          color: "#183D32",
                           fontFamily: "monospace",
                           fontSize: 13,
                           fontWeight: 800,
@@ -640,7 +640,7 @@ const StaffSubmissions = () => {
                       {submission.admin_notes ? (
                         <Typography
                           sx={{
-                            color: "#475569",
+                            color: "#4C695A",
                             fontSize: 12.5,
                             lineHeight: 1.6,
                             whiteSpace: "normal",
@@ -664,7 +664,7 @@ const StaffSubmissions = () => {
                     <TableCell>
                       <Typography
                         sx={{
-                          color: "#64748B",
+                          color: "#617B6C",
                           fontSize: 12.5,
                         }}
                       >
@@ -675,7 +675,7 @@ const StaffSubmissions = () => {
                     <TableCell>
                       <Typography
                         sx={{
-                          color: submission.reviewed_at ? "#64748B" : "#CBD5E1",
+                          color: submission.reviewed_at ? "#617B6C" : "#CBD5E1",
                           fontSize: 12.5,
                         }}
                       >

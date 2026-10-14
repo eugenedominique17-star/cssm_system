@@ -368,7 +368,7 @@ const AccountManagement = () => {
   const getStatusChip = (status) => {
     const styles = {
       active: {
-        bgcolor: "#ECFDF5",
+        bgcolor: "#D8F3E5",
         color: "#047857",
         border: "#A7F3D0",
       },
@@ -387,9 +387,9 @@ const AccountManagement = () => {
     };
 
     const style = styles[status] || {
-      bgcolor: "#F8FAFC",
-      color: "#64748B",
-      border: "#E2E8F0",
+      bgcolor: "var(--sh-page-tint)",
+      color: "#6B817C",
+      border: "#DCEBE7",
     };
 
     return (
@@ -453,7 +453,7 @@ const AccountManagement = () => {
   const sectionLabelSx = {
     mb: 1.4,
 
-    color: "#475569",
+    color: "#58736C",
 
     fontSize: "0.72rem",
 
@@ -499,6 +499,9 @@ const AccountManagement = () => {
       className="page-container"
       sx={{
         width: "100%",
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at 8% 5%, rgba(200,238,217,.18), transparent 24%), linear-gradient(180deg, #FBFFFD 0%, #EFF5E7 100%)",
 
         maxWidth: 1600,
 
@@ -545,7 +548,7 @@ const AccountManagement = () => {
           <Typography
             className="page-title"
             sx={{
-              color: "#0F172A",
+              color: "#173F3A",
 
               fontSize: {
                 xs: "1.55rem",
@@ -566,7 +569,7 @@ const AccountManagement = () => {
             sx={{
               mt: 0.45,
 
-              color: "#64748B",
+              color: "#6B817C",
 
               fontSize: "0.82rem",
 
@@ -601,12 +604,12 @@ const AccountManagement = () => {
 
             fontWeight: 750,
 
-            boxShadow: "0 5px 14px rgba(0,168,150,0.18)",
+            boxShadow: "0 5px 14px rgba(6,102,73,0.16)",
 
             "&:hover": {
-              bgcolor: "#00897B",
+              bgcolor: "#07543E",
 
-              boxShadow: "0 7px 18px rgba(0,168,150,0.22)",
+              boxShadow: "0 7px 18px rgba(6,102,73,0.20)",
             },
           }}
         >
@@ -629,22 +632,22 @@ const AccountManagement = () => {
           {
             label: "Total Accounts",
             value: users.length,
-            background: "linear-gradient(135deg, #0F766E, #0D9488)",
+            background: "linear-gradient(135deg, #066649, #27AE80)",
           },
           {
             label: "Active",
             value: users.filter((user) => user.status === "active").length,
-            background: "linear-gradient(135deg, #059669, #10B981)",
+            background: "linear-gradient(135deg, #15806F, #34C6A8)",
           },
           {
             label: "Pending",
             value: users.filter((user) => user.status === "pending").length,
-            background: "linear-gradient(135deg, #D97706, #F59E0B)",
+            background: "linear-gradient(135deg, #D6A34A, #F2C66D)",
           },
           {
             label: "Rejected",
             value: users.filter((user) => user.status === "rejected").length,
-            background: "linear-gradient(135deg, #DC2626, #EF4444)",
+            background: "linear-gradient(135deg, #C96A6A, #E89A8F)",
           },
         ].map((item) => (
           <Grid item xs={6} sm={6} md={3} key={item.label}>
@@ -663,9 +666,9 @@ const AccountManagement = () => {
 
                 background: item.background,
 
-                borderRadius: "14px",
+                borderRadius: "18px",
 
-                boxShadow: "0 6px 18px rgba(15,23,42,0.08)",
+                boxShadow: "0 12px 30px rgba(17,94,89,0.08)",
               }}
             >
               <Typography
@@ -730,7 +733,7 @@ const AccountManagement = () => {
 
           border: "1px solid #E8EEF2",
 
-          boxShadow: "0 5px 18px rgba(15,23,42,0.045)",
+          boxShadow: "0 5px 18px rgba(17,94,89,0.05)",
 
           overflow: "auto",
         }}
@@ -744,16 +747,16 @@ const AccountManagement = () => {
           <TableHead>
             <TableRow
               sx={{
-                bgcolor: "#F8FAFC",
+                bgcolor: "var(--sh-page-tint)",
 
                 "& th": {
                   py: 1.25,
 
                   px: 1.5,
 
-                  color: "#475569",
+                  color: "#58736C",
 
-                  borderBottom: "1px solid #E2E8F0",
+                  borderBottom: "1px solid #D5E5D9",
 
                   fontSize: "0.68rem",
 
@@ -793,14 +796,14 @@ const AccountManagement = () => {
                   transition: "background-color .15s ease",
 
                   "&:hover": {
-                    bgcolor: "#FAFCFC",
+                    bgcolor: "#F8FDFB",
                   },
 
                   "& td": {
                     py: 1.05,
                     px: 1.5,
 
-                    borderBottom: "1px solid #F1F5F9",
+                    borderBottom: "1px solid #EDF3E8",
                   },
 
                   "&:last-child td": {
@@ -824,7 +827,7 @@ const AccountManagement = () => {
                         width: 32,
                         height: 32,
 
-                        background: "linear-gradient(135deg, #0D9488, #0F766E)",
+                        background: "linear-gradient(135deg, #27AE80, #066649)",
 
                         color: "#FFFFFF",
 
@@ -838,7 +841,7 @@ const AccountManagement = () => {
 
                     <Typography
                       sx={{
-                        color: "#475569",
+                        color: "#58736C",
 
                         fontFamily: "monospace",
 
@@ -859,7 +862,7 @@ const AccountManagement = () => {
                 <TableCell>
                   <Typography
                     sx={{
-                      color: "#0F172A",
+                      color: "#173F3A",
 
                       fontSize: "0.8rem",
 
@@ -877,7 +880,7 @@ const AccountManagement = () => {
                 <TableCell>
                   <Typography
                     sx={{
-                      color: "#64748B",
+                      color: "#6B817C",
 
                       fontSize: "0.77rem",
 
@@ -901,7 +904,7 @@ const AccountManagement = () => {
                 <TableCell>
                   <Typography
                     sx={{
-                      color: "#64748B",
+                      color: "#6B817C",
 
                       fontSize: "0.74rem",
 
@@ -936,14 +939,14 @@ const AccountManagement = () => {
                       sx={{
                         ...actionButtonSx,
 
-                        color: "#0F766E",
+                        color: "#066649",
 
                         borderColor: "#99D8CE",
 
                         "&:hover": {
-                          bgcolor: "#F0FDFA",
+                          bgcolor: "#EFF9F1",
 
-                          borderColor: "#0D9488",
+                          borderColor: "#087F5B",
                         },
                       }}
                     >
@@ -965,7 +968,7 @@ const AccountManagement = () => {
                             borderColor: "#A7F3D0",
 
                             "&:hover": {
-                              bgcolor: "#ECFDF5",
+                              bgcolor: "#D8F3E5",
 
                               borderColor: "#10B981",
                             },
@@ -1007,14 +1010,14 @@ const AccountManagement = () => {
                         sx={{
                           ...actionButtonSx,
 
-                          color: "#0F766E",
+                          color: "#066649",
 
                           borderColor: "#99D8CE",
 
                           "&:hover": {
-                            bgcolor: "#F0FDFA",
+                            bgcolor: "#EFF9F1",
 
-                            borderColor: "#0D9488",
+                            borderColor: "#087F5B",
                           },
                         }}
                       >
@@ -1030,14 +1033,14 @@ const AccountManagement = () => {
                       sx={{
                         ...actionButtonSx,
 
-                        color: "#475569",
+                        color: "#58736C",
 
-                        borderColor: "#CBD5E1",
+                        borderColor: "#C9DFD9",
 
                         "&:hover": {
-                          bgcolor: "#F8FAFC",
+                          bgcolor: "var(--sh-page-tint)",
 
-                          borderColor: "#94A3B8",
+                          borderColor: "#8CA39D",
                         },
                       }}
                     >
@@ -1046,25 +1049,25 @@ const AccountManagement = () => {
 
                     {user.role !== "admin" && user.status === "active" && (
                       <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<Block />}
-                      onClick={() => handleDeactivate(user.id)}
-                      sx={{
-                        ...actionButtonSx,
+                        size="small"
+                        variant="outlined"
+                        startIcon={<Block />}
+                        onClick={() => handleDeactivate(user.id)}
+                        sx={{
+                          ...actionButtonSx,
 
-                        color: "#DC2626",
+                          color: "#DC2626",
 
-                        borderColor: "#FECACA",
+                          borderColor: "#FECACA",
 
-                        "&:hover": {
-                          bgcolor: "#FEF2F2",
+                          "&:hover": {
+                            bgcolor: "#FEF2F2",
 
-                          borderColor: "#EF4444",
-                        },
-                      }}
-                    >
-                      Deactivate
+                            borderColor: "#EF4444",
+                          },
+                        }}
+                      >
+                        Deactivate
                       </Button>
                     )}
                   </Box>
@@ -1090,7 +1093,7 @@ const AccountManagement = () => {
 
             maxHeight: "90vh",
 
-            boxShadow: "0 24px 70px rgba(15,23,42,0.18)",
+            boxShadow: "0 24px 70px rgba(17,94,89,0.16)",
           },
         }}
       >
@@ -1099,12 +1102,12 @@ const AccountManagement = () => {
             px: 2.5,
             py: 2,
 
-            borderBottom: "1px solid #E2E8F0",
+            borderBottom: "1px solid #D5E5D9",
           }}
         >
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#173F3A",
 
               fontSize: "1.05rem",
 
@@ -1118,7 +1121,7 @@ const AccountManagement = () => {
             sx={{
               mt: 0.3,
 
-              color: "#64748B",
+              color: "#6B817C",
 
               fontSize: "0.75rem",
             }}
@@ -1395,7 +1398,7 @@ const AccountManagement = () => {
 
             gap: 0.8,
 
-            borderTop: "1px solid #E2E8F0",
+            borderTop: "1px solid #D5E5D9",
           }}
         >
           <Button
@@ -1408,9 +1411,9 @@ const AccountManagement = () => {
 
               borderRadius: "9px",
 
-              borderColor: "#CBD5E1",
+              borderColor: "#C9DFD9",
 
-              color: "#475569",
+              color: "#58736C",
 
               textTransform: "none",
 
@@ -1419,9 +1422,9 @@ const AccountManagement = () => {
               fontWeight: 700,
 
               "&:hover": {
-                bgcolor: "#F8FAFC",
+                bgcolor: "var(--sh-page-tint)",
 
-                borderColor: "#94A3B8",
+                borderColor: "#8CA39D",
               },
             }}
           >
@@ -1449,7 +1452,7 @@ const AccountManagement = () => {
               boxShadow: "none",
 
               "&:hover": {
-                bgcolor: "#00897B",
+                bgcolor: "#07543E",
                 boxShadow: "none",
               },
             }}
@@ -1476,7 +1479,7 @@ const AccountManagement = () => {
       >
         <Box
           sx={{
-            bgcolor: "#FFFFFF",
+            bgcolor: "var(--sh-glass-bg)",
 
             width: "100%",
             maxWidth: 570,
@@ -1487,7 +1490,7 @@ const AccountManagement = () => {
 
             borderRadius: "16px",
 
-            boxShadow: "0 25px 70px rgba(15,23,42,0.22)",
+            boxShadow: "0 25px 70px rgba(17,94,89,0.18)",
           }}
         >
           <Box
@@ -1499,13 +1502,13 @@ const AccountManagement = () => {
               alignItems: "center",
               justifyContent: "space-between",
 
-              borderBottom: "1px solid #E2E8F0",
+              borderBottom: "1px solid #D5E5D9",
             }}
           >
             <Box>
               <Typography
                 sx={{
-                  color: "#0F172A",
+                  color: "#173F3A",
 
                   fontSize: "1.05rem",
 
@@ -1519,7 +1522,7 @@ const AccountManagement = () => {
                 sx={{
                   mt: 0.2,
 
-                  color: "#64748B",
+                  color: "#6B817C",
 
                   fontSize: "0.72rem",
                 }}
@@ -1533,12 +1536,12 @@ const AccountManagement = () => {
                 size="small"
                 onClick={() => setDetailsOpen(false)}
                 sx={{
-                  color: "#64748B",
+                  color: "#6B817C",
 
-                  bgcolor: "#F8FAFC",
+                  bgcolor: "var(--sh-page-tint)",
 
                   "&:hover": {
-                    bgcolor: "#F1F5F9",
+                    bgcolor: "#EDF6F3",
                   },
                 }}
               >
@@ -1565,9 +1568,9 @@ const AccountManagement = () => {
 
                   gap: 1.3,
 
-                  bgcolor: "#F0FDFA",
+                  bgcolor: "#EFF9F1",
 
-                  border: "1px solid #CCFBF1",
+                  border: "1px solid #D8F3E5",
 
                   borderRadius: "12px",
                 }}
@@ -1577,7 +1580,7 @@ const AccountManagement = () => {
                     width: 42,
                     height: 42,
 
-                    background: "linear-gradient(135deg, #0D9488, #0F766E)",
+                    background: "linear-gradient(135deg, #27AE80, #066649)",
 
                     fontSize: "0.9rem",
 
@@ -1590,7 +1593,7 @@ const AccountManagement = () => {
                 <Box>
                   <Typography
                     sx={{
-                      color: "#0F172A",
+                      color: "#173F3A",
 
                       fontSize: "0.9rem",
 
@@ -1604,7 +1607,7 @@ const AccountManagement = () => {
                     sx={{
                       mt: 0.15,
 
-                      color: "#64748B",
+                      color: "#6B817C",
 
                       fontFamily: "monospace",
 
@@ -1677,7 +1680,7 @@ const AccountManagement = () => {
 
                           p: 1.35,
 
-                          bgcolor: "#F8FAFC",
+                          bgcolor: "var(--sh-page-tint)",
 
                           border: "1px solid #EEF2F6",
 
@@ -1686,7 +1689,7 @@ const AccountManagement = () => {
                       >
                         <Typography
                           sx={{
-                            color: "#94A3B8",
+                            color: "#8CA39D",
 
                             fontSize: "0.62rem",
 
@@ -1704,7 +1707,7 @@ const AccountManagement = () => {
                           sx={{
                             mt: 0.35,
 
-                            color: "#334155",
+                            color: "#355D55",
 
                             fontSize: "0.78rem",
 
@@ -1728,7 +1731,7 @@ const AccountManagement = () => {
 
                       p: 1.35,
 
-                      bgcolor: "#F8FAFC",
+                      bgcolor: "var(--sh-page-tint)",
 
                       border: "1px solid #EEF2F6",
 
@@ -1739,7 +1742,7 @@ const AccountManagement = () => {
                       sx={{
                         mb: 0.6,
 
-                        color: "#94A3B8",
+                        color: "#8CA39D",
 
                         fontSize: "0.62rem",
 
@@ -1764,7 +1767,7 @@ const AccountManagement = () => {
 
                       p: 1.35,
 
-                      bgcolor: "#F8FAFC",
+                      bgcolor: "var(--sh-page-tint)",
 
                       border: "1px solid #EEF2F6",
 
@@ -1775,7 +1778,7 @@ const AccountManagement = () => {
                       sx={{
                         mb: 0.6,
 
-                        color: "#94A3B8",
+                        color: "#8CA39D",
 
                         fontSize: "0.62rem",
 
@@ -1800,7 +1803,7 @@ const AccountManagement = () => {
 
                       p: 1.35,
 
-                      bgcolor: "#F8FAFC",
+                      bgcolor: "var(--sh-page-tint)",
 
                       border: "1px solid #EEF2F6",
 
@@ -1809,7 +1812,7 @@ const AccountManagement = () => {
                   >
                     <Typography
                       sx={{
-                        color: "#94A3B8",
+                        color: "#8CA39D",
 
                         fontSize: "0.62rem",
 
@@ -1825,7 +1828,7 @@ const AccountManagement = () => {
                       sx={{
                         mt: 0.35,
 
-                        color: "#334155",
+                        color: "#355D55",
 
                         fontSize: "0.75rem",
 
@@ -1845,7 +1848,7 @@ const AccountManagement = () => {
 
                         p: 1.35,
 
-                        bgcolor: "#F8FAFC",
+                        bgcolor: "var(--sh-page-tint)",
 
                         border: "1px solid #EEF2F6",
 
@@ -1854,7 +1857,7 @@ const AccountManagement = () => {
                     >
                       <Typography
                         sx={{
-                          color: "#94A3B8",
+                          color: "#8CA39D",
 
                           fontSize: "0.62rem",
 
@@ -1870,7 +1873,7 @@ const AccountManagement = () => {
                         sx={{
                           mt: 0.35,
 
-                          color: "#334155",
+                          color: "#355D55",
 
                           fontSize: "0.75rem",
 
@@ -1897,7 +1900,7 @@ const AccountManagement = () => {
 
               gap: 0.8,
 
-              borderTop: "1px solid #E2E8F0",
+              borderTop: "1px solid #D5E5D9",
             }}
           >
             <Button
@@ -1910,9 +1913,9 @@ const AccountManagement = () => {
 
                 borderRadius: "9px",
 
-                borderColor: "#CBD5E1",
+                borderColor: "#C9DFD9",
 
-                color: "#475569",
+                color: "#58736C",
 
                 textTransform: "none",
 
@@ -1950,7 +1953,7 @@ const AccountManagement = () => {
                   boxShadow: "none",
 
                   "&:hover": {
-                    bgcolor: "#00897B",
+                    bgcolor: "#07543E",
                     boxShadow: "none",
                   },
                 }}
@@ -1975,7 +1978,7 @@ const AccountManagement = () => {
           sx: {
             borderRadius: "15px",
 
-            boxShadow: "0 24px 70px rgba(15,23,42,0.2)",
+            boxShadow: "0 24px 70px rgba(17,94,89,0.18)",
           },
         }}
       >
@@ -1984,12 +1987,12 @@ const AccountManagement = () => {
             px: 2.5,
             py: 1.8,
 
-            borderBottom: "1px solid #E2E8F0",
+            borderBottom: "1px solid #D5E5D9",
           }}
         >
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#173F3A",
 
               fontSize: "1rem",
 
@@ -2004,7 +2007,7 @@ const AccountManagement = () => {
               sx={{
                 mt: 0.25,
 
-                color: "#64748B",
+                color: "#6B817C",
 
                 fontSize: "0.72rem",
               }}
@@ -2025,7 +2028,7 @@ const AccountManagement = () => {
             <>
               <Typography
                 sx={{
-                  color: "#475569",
+                  color: "#58736C",
 
                   fontSize: "0.8rem",
 
@@ -2036,7 +2039,7 @@ const AccountManagement = () => {
                 <Box
                   component="span"
                   sx={{
-                    color: "#0F172A",
+                    color: "#173F3A",
                     fontWeight: 750,
                   }}
                 >
@@ -2051,16 +2054,16 @@ const AccountManagement = () => {
 
                   p: 1.5,
 
-                  bgcolor: "#F8FAFC",
+                  bgcolor: "var(--sh-page-tint)",
 
-                  border: "1px solid #E2E8F0",
+                  border: "1px solid #D5E5D9",
 
                   borderRadius: "10px",
                 }}
               >
                 <Typography
                   sx={{
-                    color: "#64748B",
+                    color: "#6B817C",
 
                     fontSize: "0.72rem",
 
@@ -2071,7 +2074,7 @@ const AccountManagement = () => {
                   <Box
                     component="span"
                     sx={{
-                      color: "#0F172A",
+                      color: "#173F3A",
 
                       fontFamily: "monospace",
 
@@ -2087,7 +2090,7 @@ const AccountManagement = () => {
                   sx={{
                     mt: 0.6,
 
-                    color: "#64748B",
+                    color: "#6B817C",
 
                     fontSize: "0.72rem",
 
@@ -2140,7 +2143,7 @@ const AccountManagement = () => {
 
                     gap: 2,
 
-                    borderBottom: "1px solid #F1F5F9",
+                    borderBottom: "1px solid #EDF3E8",
 
                     "&:last-child": {
                       borderBottom: 0,
@@ -2149,7 +2152,7 @@ const AccountManagement = () => {
                 >
                   <Typography
                     sx={{
-                      color: "#64748B",
+                      color: "#6B817C",
 
                       fontSize: "0.72rem",
                     }}
@@ -2159,7 +2162,7 @@ const AccountManagement = () => {
 
                   <Typography
                     sx={{
-                      color: "#0F172A",
+                      color: "#173F3A",
 
                       fontSize: "0.75rem",
 
@@ -2188,7 +2191,7 @@ const AccountManagement = () => {
 
             gap: 0.7,
 
-            borderTop: "1px solid #E2E8F0",
+            borderTop: "1px solid #D5E5D9",
           }}
         >
           <Button
@@ -2201,9 +2204,9 @@ const AccountManagement = () => {
 
               borderRadius: "8px",
 
-              color: "#475569",
+              color: "#58736C",
 
-              borderColor: "#CBD5E1",
+              borderColor: "#C9DFD9",
 
               textTransform: "none",
 
@@ -2239,7 +2242,7 @@ const AccountManagement = () => {
                 boxShadow: "none",
 
                 "&:hover": {
-                  bgcolor: "#00897B",
+                  bgcolor: "#07543E",
 
                   boxShadow: "none",
                 },

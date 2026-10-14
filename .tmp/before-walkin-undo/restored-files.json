@@ -1,0 +1,21 @@
+[
+  "frontend/src/pages/public/Homepage.jsx",
+  "frontend/src/pages/admin/Reports.jsx",
+  "frontend/src/pages/staff/OrderManagement.jsx",
+  "frontend/src/pages/staff/ReceiptManagement.jsx",
+  "frontend/src/App.js",
+  "frontend/src/components/DashboardLayout.jsx",
+  "frontend/src/components/Navbar.jsx",
+  "frontend/src/components/Footer.jsx",
+  "frontend/src/pages/user/Dashboard.jsx",
+  "frontend/src/pages/user/Favorites.jsx",
+  "frontend/src/hooks/useOrderStatusSSE.js",
+  "frontend/src/pages/user/OrderHistory.jsx",
+  "backend/controllers/transaction.controller.js",
+  "backend/routes/transactions.routes.js",
+  "backend/models/submission.model.js",
+  "backend/controllers/admin.controller.js",
+  "backend/models/transaction.model.js",
+  "backend/tests/reports.test.js",
+  "backend/tests/sales-auth.test.js"
+]

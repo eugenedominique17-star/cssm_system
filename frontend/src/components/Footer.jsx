@@ -37,7 +37,7 @@ const Footer = () => {
     <Box
       component="footer"
       sx={{
-        background: `linear-gradient(180deg, ${colors?.dark || "#0F172A"} 0%, #090D16 100%)`,
+        background: `linear-gradient(180deg, ${colors?.dark || "#183D32"} 0%, #090D16 100%)`,
         color: "white",
         pt: { xs: 6, md: 8 },
         pb: 4,
@@ -56,7 +56,7 @@ const Footer = () => {
           width: 300,
           height: 300,
           background:
-            "radial-gradient(circle, rgba(13, 148, 136, 0.15) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(8,127,91, 0.15) 0%, transparent 70%)",
           borderRadius: "50%",
           pointerEvents: "none",
           filter: "blur(30px)",
@@ -70,7 +70,7 @@ const Footer = () => {
           width: 350,
           height: 350,
           background:
-            "radial-gradient(circle, rgba(94, 234, 212, 0.08) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(185,235,208, 0.08) 0%, transparent 70%)",
           borderRadius: "50%",
           pointerEvents: "none",
           filter: "blur(40px)",
@@ -99,17 +99,17 @@ const Footer = () => {
                   className="brand-logo"
                   sx={{
                     background:
-                      "linear-gradient(135deg, rgba(94,234,212,0.2) 0%, rgba(13,148,136,0.1) 100%)",
+                      "linear-gradient(135deg, rgba(185,235,208,0.2) 0%, rgba(8,127,91,0.1) 100%)",
                     borderRadius: "12px",
                     p: 1,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    border: "1px solid rgba(94, 234, 212, 0.25)",
+                    border: "1px solid rgba(185,235,208, 0.25)",
                     transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 >
-                  <Storefront sx={{ color: "#5EEAD4", fontSize: 28 }} />
+                  <Storefront sx={{ color: "#B9EBD0", fontSize: 28 }} />
                 </Box>
                 <Box>
                   <Typography
@@ -128,7 +128,7 @@ const Footer = () => {
                   </Typography>
                   <Typography
                     variant="caption"
-                    sx={{ color: "#94A3B8", fontWeight: 500 }}
+                    sx={{ color: "#839B8C", fontWeight: 500 }}
                   >
                     Sari-Sari Store Stock Management
                   </Typography>
@@ -138,7 +138,7 @@ const Footer = () => {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#94A3B8",
+                  color: "#839B8C",
                   lineHeight: 1.6,
                   mb: 2,
                 }}
@@ -188,7 +188,7 @@ const Footer = () => {
                 fontSize: "0.75rem",
                 fontWeight: 700,
                 letterSpacing: "1px",
-                color: "#5EEAD4",
+                color: "#B9EBD0",
                 mb: 2,
                 display: "block",
               }}
@@ -202,7 +202,7 @@ const Footer = () => {
                   href={link.href}
                   onClick={(e) => e.preventDefault()}
                   sx={{
-                    color: "#94A3B8",
+                    color: "#839B8C",
                     textDecoration: "none",
                     fontSize: "0.875rem",
                     fontWeight: 500,
@@ -212,16 +212,16 @@ const Footer = () => {
                     width: "fit-content",
                     transition: "all 0.2s ease-in-out",
                     "&:hover": {
-                      color: "#5EEAD4",
+                      color: "#B9EBD0",
                       transform: "translateX(4px)",
-                      "& .link-icon": { color: "#5EEAD4" },
+                      "& .link-icon": { color: "#B9EBD0" },
                     },
                   }}
                 >
                   <Box
                     className="link-icon"
                     sx={{
-                      color: "#64748B",
+                      color: "#617B6C",
                       display: "flex",
                       transition: "color 0.2s ease",
                     }}
@@ -242,7 +242,7 @@ const Footer = () => {
                 fontSize: "0.75rem",
                 fontWeight: 700,
                 letterSpacing: "1px",
-                color: "#5EEAD4",
+                color: "#B9EBD0",
                 mb: 2,
                 display: "block",
               }}
@@ -261,7 +261,7 @@ const Footer = () => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                <PlaceIcon sx={{ color: "#5EEAD4", fontSize: 20, mt: 0.2 }} />
+                <PlaceIcon sx={{ color: "#B9EBD0", fontSize: 20, mt: 0.2 }} />
                 <Typography
                   variant="body2"
                   sx={{ color: "#CBD5E1", lineHeight: 1.5 }}
@@ -270,14 +270,14 @@ const Footer = () => {
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <PhoneIcon sx={{ color: "#5EEAD4", fontSize: 20 }} />
-                <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                <PhoneIcon sx={{ color: "#B9EBD0", fontSize: 20 }} />
+                <Typography variant="body2" sx={{ color: "#839B8C" }}>
                   +63 912 345 6789
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <EmailIcon sx={{ color: "#5EEAD4", fontSize: 20 }} />
-                <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                <EmailIcon sx={{ color: "#B9EBD0", fontSize: 20 }} />
+                <Typography variant="body2" sx={{ color: "#839B8C" }}>
                   contact@storehub.ph
                 </Typography>
               </Box>
@@ -301,7 +301,7 @@ const Footer = () => {
           <Typography
             variant="body2"
             sx={{
-              color: "#64748B",
+              color: "#617B6C",
               textAlign: { xs: "center", sm: "left" },
               fontSize: "0.85rem",
             }}
@@ -322,16 +322,16 @@ const Footer = () => {
                 size="small"
                 onClick={() => navigate("/")}
                 sx={{
-                  color: "#94A3B8",
+                  color: "#839B8C",
                   bgcolor: "rgba(255, 255, 255, 0.03)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
                   p: 1,
                   borderRadius: "10px",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    color: "#5EEAD4",
-                    bgcolor: "rgba(94, 234, 212, 0.1)",
-                    borderColor: "rgba(94, 234, 212, 0.3)",
+                    color: "#B9EBD0",
+                    bgcolor: "rgba(185,235,208, 0.1)",
+                    borderColor: "rgba(185,235,208, 0.3)",
                     transform: "translateY(-2px)",
                   },
                 }}
@@ -344,16 +344,16 @@ const Footer = () => {
                 size="small"
                 onClick={() => navigate("/login")}
                 sx={{
-                  color: "#94A3B8",
+                  color: "#839B8C",
                   bgcolor: "rgba(255, 255, 255, 0.03)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
                   p: 1,
                   borderRadius: "10px",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    color: "#5EEAD4",
-                    bgcolor: "rgba(94, 234, 212, 0.1)",
-                    borderColor: "rgba(94, 234, 212, 0.3)",
+                    color: "#B9EBD0",
+                    bgcolor: "rgba(185,235,208, 0.1)",
+                    borderColor: "rgba(185,235,208, 0.3)",
                     transform: "translateY(-2px)",
                   },
                 }}

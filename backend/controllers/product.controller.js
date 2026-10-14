@@ -6,10 +6,10 @@ const productSchema = Joi.object({
   name: Joi.string().min(2).max(200).required(),
   description: Joi.string().allow('', null),
   price: Joi.number().positive().required(),
-  stock: Joi.number().integer().min(0).required(),
+  stock: Joi.number().valid(0).default(0),
   category: Joi.string().min(2).max(100).required(),
   image_url: Joi.string().allow('', null),
-  expiry_date: Joi.date().allow('', null).optional()
+  expiry_date: Joi.valid('', null).optional()
 });
 
 exports.getAll = async (req, res) => {
@@ -70,21 +70,32 @@ exports.update = async (req, res) => {
     if (!product) return res.status(404).json({ message: 'Product not found.' });
 
     const { name, description, price, stock, category, image_url, expiry_date, status } = req.body;
+    if (stock !== undefined || (expiry_date !== undefined && expiry_date !== null && expiry_date !== '')) {
+      return res.status(409).json({ message: 'Use Inventory for stock and batch expiry changes.' });
+    }
 
     if (req.user.role === 'staff') {
       const submissionId = await SubmissionModel.create({
         type: 'stock_update',
-        data: { product_id: parseInt(req.params.id), name, description, price, stock, category, image_url, expiry_date },
+        data: {
+          product_id: parseInt(req.params.id),
+          name,
+          description,
+          price,
+          category,
+          image_url,
+          expiry_date
+        },
         submitted_by: req.user.id
       });
-      return res.json({ message: 'Update submitted for admin approval.', submissionId });
+      return res.json({ message: 'Product details submitted for admin approval.', submissionId });
     }
 
     await ProductModel.update(req.params.id, { name, description, price, stock, category, image_url, expiry_date, status });
     res.json({ message: 'Product updated successfully.' });
   } catch (error) {
     console.error('Update product error:', error);
-    res.status(500).json({ message: 'Server error.' });
+    res.status(error.status || 500).json({ message: error.status ? error.message : 'Server error.' });
   }
 };
 
@@ -96,7 +107,7 @@ exports.delete = async (req, res) => {
     res.json({ message: 'Product deleted successfully.' });
   } catch (error) {
     console.error('Delete product error:', error);
-    res.status(500).json({ message: 'Server error.' });
+    res.status(error.status || 500).json({ message: error.status ? error.message : 'Server error.' });
   }
 };
 

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 
 const AuthContext = createContext(null);
@@ -50,8 +50,21 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('storehub-cart-')) {
+        localStorage.removeItem(key);
+      }
+    });
+
     setUser(null);
   };
+
+  const updateUser = useCallback((userData) => {
+    const normalizedUser = normalizeUser(userData);
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    setUser(normalizedUser);
+  }, []);
 
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'admin';
@@ -63,6 +76,7 @@ export const AuthProvider = ({ children }) => {
       user,
       login,
       logout,
+      updateUser,
       isAuthenticated,
       isAdmin,
       isStaff,

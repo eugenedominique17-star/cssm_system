@@ -74,20 +74,20 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
         {
           label: 'Spending',
           data: totals,
-          borderColor: '#5EEAD4',
+          borderColor: '#B9EBD0',
           backgroundColor: (context) => {
             const ctx = context.chart.ctx;
             const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-            gradient.addColorStop(0, 'rgba(94, 234, 212, 0.35)');
-            gradient.addColorStop(1, 'rgba(94, 234, 212, 0.0)');
+            gradient.addColorStop(0, 'rgba(185,235,208, 0.35)');
+            gradient.addColorStop(1, 'rgba(185,235,208, 0.0)');
             return gradient;
           },
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 6,
-          pointBackgroundColor: '#0D9488',
-          pointBorderColor: '#5EEAD4',
+          pointBackgroundColor: '#087F5B',
+          pointBorderColor: '#B9EBD0',
           pointBorderWidth: 2,
         },
       ],
@@ -170,9 +170,9 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
             height: 42,
             display: 'grid',
             placeItems: 'center',
-            bgcolor: 'rgba(13, 148, 136, 0.15)',
-            color: '#5EEAD4',
-            border: '1px solid rgba(94, 234, 212, 0.2)',
+            bgcolor: 'rgba(8,127,91, 0.15)',
+            color: '#B9EBD0',
+            border: '1px solid rgba(185,235,208, 0.2)',
             borderRadius: '12px',
             flexShrink: 0,
           }}
@@ -183,7 +183,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
         <Box>
           <Typography
             sx={{
-              color: '#5EEAD4',
+              color: '#B9EBD0',
               fontSize: '0.72rem',
               fontWeight: 800,
               letterSpacing: '1px',
@@ -194,7 +194,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
           </Typography>
           <Typography
             sx={{
-              color: '#F8FAFC',
+              color: '#F7F5EC',
               fontSize: '1.25rem',
               fontWeight: 800,
               lineHeight: 1.2,
@@ -212,7 +212,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
             elevation={0}
             sx={{
               height: '100%',
-              bgcolor: '#0F172A',
+              bgcolor: '#183D32',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: '16px',
             }}
@@ -221,7 +221,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
               <Stack spacing={2}>
                 <Typography
                   sx={{
-                    color: '#64748B',
+                    color: '#617B6C',
                     fontWeight: 800,
                     fontSize: '0.72rem',
                     letterSpacing: '0.5px',
@@ -234,7 +234,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                 <Box>
                   <Typography
                     variant="h5"
-                    sx={{ fontWeight: 900, color: '#F8FAFC', lineHeight: 1 }}
+                    sx={{ fontWeight: 900, color: '#F7F5EC', lineHeight: 1 }}
                   >
                     {formatPrice(monthComparison.thisMonth)}
                   </Typography>
@@ -264,13 +264,13 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                       </Typography>
                     </Box>
 
-                    <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.75rem' }}>
+                    <Typography variant="caption" sx={{ color: '#617B6C', fontSize: '0.75rem' }}>
                       vs last month
                     </Typography>
                   </Stack>
                 </Box>
 
-                <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.72rem' }}>
+                <Typography variant="caption" sx={{ color: '#617B6C', fontSize: '0.72rem' }}>
                   Last month: {formatPrice(monthComparison.lastMonth)}
                 </Typography>
               </Stack>
@@ -284,7 +284,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
             elevation={0}
             sx={{
               height: '100%',
-              bgcolor: '#0F172A',
+              bgcolor: '#183D32',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: '16px',
             }}
@@ -294,7 +294,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography
                     sx={{
-                      color: '#64748B',
+                      color: '#617B6C',
                       fontWeight: 800,
                       fontSize: '0.72rem',
                       letterSpacing: '0.5px',
@@ -303,19 +303,19 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                   >
                     Total Orders
                   </Typography>
-                  <ReceiptLongRounded sx={{ color: '#5EEAD4', fontSize: '1.2rem' }} />
+                  <ReceiptLongRounded sx={{ color: '#B9EBD0', fontSize: '1.2rem' }} />
                 </Stack>
 
                 <Box>
                   <Typography
                     variant="h3"
-                    sx={{ fontWeight: 900, color: '#F8FAFC', lineHeight: 1 }}
+                    sx={{ fontWeight: 900, color: '#F7F5EC', lineHeight: 1 }}
                   >
                     {orders.length}
                   </Typography>
                   <Typography
                     variant="caption"
-                    sx={{ color: '#64748B', fontSize: '0.75rem', mt: 1, display: 'block' }}
+                    sx={{ color: '#617B6C', fontSize: '0.75rem', mt: 1, display: 'block' }}
                   >
                     Completed transactions
                   </Typography>
@@ -330,7 +330,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
           <Card
             elevation={0}
             sx={{
-              bgcolor: '#0F172A',
+              bgcolor: '#183D32',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: '16px',
             }}
@@ -340,7 +340,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                 sx={{
                   fontWeight: 800,
                   fontSize: '0.875rem',
-                  color: '#F8FAFC',
+                  color: '#F7F5EC',
                   mb: 2,
                 }}
               >
@@ -355,9 +355,9 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                     plugins: {
                       legend: { display: false },
                       tooltip: {
-                        backgroundColor: '#1E293B',
-                        titleColor: '#F8FAFC',
-                        bodyColor: '#5EEAD4',
+                        backgroundColor: '#254D3F',
+                        titleColor: '#F7F5EC',
+                        bodyColor: '#B9EBD0',
                         borderColor: 'rgba(255, 255, 255, 0.1)',
                         borderWidth: 1,
                         padding: 10,
@@ -370,12 +370,12 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                     scales: {
                       x: {
                         grid: { display: false },
-                        ticks: { color: '#64748B', font: { size: 11, weight: '600' } },
+                        ticks: { color: '#617B6C', font: { size: 11, weight: '600' } },
                       },
                       y: {
                         grid: { color: 'rgba(255, 255, 255, 0.05)' },
                         ticks: {
-                          color: '#64748B',
+                          color: '#617B6C',
                           font: { size: 10 },
                           callback: (value) => `₱${value}`,
                         },
@@ -394,7 +394,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
           <Card
             elevation={0}
             sx={{
-              bgcolor: '#0F172A',
+              bgcolor: '#183D32',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: '16px',
             }}
@@ -404,7 +404,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                 sx={{
                   fontWeight: 800,
                   fontSize: '0.875rem',
-                  color: '#F8FAFC',
+                  color: '#F7F5EC',
                   mb: 2,
                 }}
               >
@@ -418,7 +418,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                       sx={{
                         p: 1.5,
                         borderRadius: '12px',
-                        bgcolor: 'rgba(30, 41, 59, 0.5)',
+                        bgcolor: 'rgba(37,77,63, 0.5)',
                         border: '1px solid rgba(255, 255, 255, 0.05)',
                       }}
                     >
@@ -430,7 +430,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                       >
                         <Typography
                           variant="body2"
-                          sx={{ fontWeight: 700, color: '#E2E8F0' }}
+                          sx={{ fontWeight: 700, color: '#D5E5D9' }}
                         >
                           {product.name}
                         </Typography>
@@ -438,8 +438,8 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                           variant="caption"
                           sx={{
                             fontWeight: 800,
-                            color: '#5EEAD4',
-                            bgcolor: 'rgba(13, 148, 136, 0.2)',
+                            color: '#B9EBD0',
+                            bgcolor: 'rgba(8,127,91, 0.2)',
                             px: 1,
                             py: 0.2,
                             borderRadius: '6px',
@@ -456,7 +456,7 @@ const AnalyticsCharts = ({ orders = [], products = [] }) => {
                           borderRadius: 3,
                           bgcolor: 'rgba(255, 255, 255, 0.08)',
                           '& .MuiLinearProgress-bar': {
-                            bgcolor: '#0D9488',
+                            bgcolor: '#087F5B',
                             borderRadius: 3,
                           },
                         }}

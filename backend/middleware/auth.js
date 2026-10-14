@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const UserModel = require('../models/user.model');
+const { auditMutation } = require('./audit');
 require('dotenv').config();
 
 const normalizeRole = (role) => {
@@ -6,40 +8,48 @@ const normalizeRole = (role) => {
   return value === 'user' ? 'client' : value;
 };
 
-const authenticate = (req, res, next) => {
+async function getAuthenticatedUser(token) {
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded || typeof decoded !== 'object' || !decoded.id) throw new Error('Invalid token');
+  } catch {
+    const error = new Error('Invalid or expired token.');
+    error.status = 401;
+    throw error;
+  }
+
+  const user = await UserModel.findById(decoded.id);
+  if (!user || user.status !== 'active' || normalizeRole(user.role) !== normalizeRole(decoded.role)) {
+    const error = new Error('Account is inactive or no longer available. Please log in again.');
+    error.status = 401;
+    throw error;
+  }
+  return { ...decoded, ...user, role: normalizeRole(user.role) };
+}
+
+const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Access denied. No token provided.' });
   }
-
-  const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = {
-      ...decoded,
-      role: normalizeRole(decoded.role)
-    };
-    next();
+    req.user = await getAuthenticatedUser(authHeader.slice(7));
   } catch (error) {
-    return res.status(401).json({ message: 'Invalid or expired token.' });
+    return res.status(error.status || 503).json({
+      message: error.status ? error.message : 'Unable to verify account. Please try again.',
+    });
   }
+  next();
 };
 
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user) {
+    if (!req.user || !roles.map(normalizeRole).includes(normalizeRole(req.user.role))) {
       return res.status(403).json({ message: 'Access denied. Insufficient permissions.' });
     }
-
-    const normalizedUserRole = normalizeRole(req.user.role);
-    const allowedRoles = new Set(roles.map(normalizeRole));
-
-    if (!allowedRoles.has(normalizedUserRole)) {
-      return res.status(403).json({ message: 'Access denied. Insufficient permissions.' });
-    }
-
-    next();
+    return auditMutation(req, res, next);
   };
 };
 
-module.exports = { authenticate, authorize };
+module.exports = { authenticate, authorize, getAuthenticatedUser };

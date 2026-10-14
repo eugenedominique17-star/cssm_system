@@ -7,7 +7,6 @@ import {
   Badge,
 } from "@mui/material";
 import {
-  AddShoppingCartRounded,
   FavoriteBorderRounded,
   ShareRounded,
   TuneRounded,
@@ -16,11 +15,10 @@ import {
 
 /**
  * Floating Action Panel with Quick Access Menu
+ * Cart removed — clients are view-only.
  */
 const FloatingActionPanel = ({
   favoriteCount = 0,
-  cartCount = 0,
-  onQuickOrder,
   onViewFavorites,
   onShare,
   onToggleFilters,
@@ -29,15 +27,6 @@ const FloatingActionPanel = ({
 
   // Configuration object for SpeedDial actions
   const actions = [
-    {
-      icon: (
-        <Badge badgeContent={cartCount} color="error" max={99}>
-          <AddShoppingCartRounded />
-        </Badge>
-      ),
-      name: `Cart (${cartCount})`,
-      action: onQuickOrder,
-    },
     {
       icon: (
         <Badge badgeContent={favoriteCount} color="error" max={99}>
@@ -82,13 +71,13 @@ const FloatingActionPanel = ({
         direction="up"
         sx={{
           "& .MuiFab-primary": {
-            bgcolor: "#0D9488",
+            bgcolor: "#087F5B",
             color: "#FFFFFF",
-            boxShadow: "0px 8px 24px rgba(13, 148, 136, 0.4)",
+            boxShadow: "0px 8px 24px rgba(8,127,91, 0.4)",
             transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
             "&:hover": {
-              bgcolor: "#0F766E",
-              boxShadow: "0px 10px 28px rgba(13, 148, 136, 0.55)",
+              bgcolor: "#066649",
+              boxShadow: "0px 10px 28px rgba(8,127,91, 0.55)",
               transform: "scale(1.05)",
             },
             "&:active": {
@@ -96,20 +85,20 @@ const FloatingActionPanel = ({
             },
           },
           "& .MuiSpeedDialAction-fab": {
-            bgcolor: "#1E293B",
-            color: "#5EEAD4",
+            bgcolor: "#254D3F",
+            color: "#B9EBD0",
             border: "1px solid rgba(255, 255, 255, 0.1)",
             transition: "all 0.2s ease",
             "&:hover": {
-              bgcolor: "#0F172A",
+              bgcolor: "#183D32",
               color: "#FFFFFF",
-              borderColor: "#5EEAD4",
+              borderColor: "#B9EBD0",
               transform: "scale(1.1)",
             },
           },
           "& .MuiSpeedDialAction-staticTooltipLabel": {
-            bgcolor: "#1E293B",
-            color: "#F8FAFC",
+            bgcolor: "#254D3F",
+            color: "#F7F5EC",
             fontSize: "0.75rem",
             fontWeight: 600,
             borderRadius: "8px",
@@ -122,22 +111,7 @@ const FloatingActionPanel = ({
         {actions.map((action) => (
           <SpeedDialAction
             key={action.name}
-            icon={action.name.startsWith('Cart') ? (
-              <Box
-                key={cartCount}
-                sx={{
-                  display: 'flex',
-                  animation: cartCount > 0 ? 'cartPulse 0.45s ease-out' : 'none',
-                  '@keyframes cartPulse': {
-                    '0%': { transform: 'scale(1)' },
-                    '50%': { transform: 'scale(1.22)' },
-                    '100%': { transform: 'scale(1)' },
-                  },
-                }}
-              >
-                {action.icon}
-              </Box>
-            ) : action.icon}
+            icon={action.icon}
             tooltipTitle={action.name}
             tooltipOpen
             onClick={() => {

@@ -55,12 +55,12 @@ const FeaturedCarousel = ({
           mb: 4,
           p: 4,
           textAlign: "center",
-          bgcolor: "rgba(30, 41, 59, 0.4)",
+          bgcolor: "rgba(37,77,63, 0.4)",
           borderRadius: 4,
           border: "1px solid rgba(255, 255, 255, 0.08)",
         }}
       >
-        <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+        <Typography variant="body2" sx={{ color: "#839B8C" }}>
           No featured products available at the moment.
         </Typography>
       </Box>
@@ -80,9 +80,9 @@ const FeaturedCarousel = ({
             height: 42,
             display: "grid",
             placeItems: "center",
-            bgcolor: "rgba(13, 148, 136, 0.15)",
-            color: "#5EEAD4",
-            border: "1px solid rgba(94, 234, 212, 0.2)",
+            bgcolor: "rgba(8,127,91, 0.15)",
+            color: "#B9EBD0",
+            border: "1px solid rgba(185,235,208, 0.2)",
             borderRadius: "12px",
             flexShrink: 0,
           }}
@@ -93,7 +93,7 @@ const FeaturedCarousel = ({
         <Box>
           <Typography
             sx={{
-              color: "#5EEAD4",
+              color: "#B9EBD0",
               fontSize: "0.72rem",
               fontWeight: 800,
               letterSpacing: "1px",
@@ -104,7 +104,7 @@ const FeaturedCarousel = ({
           </Typography>
           <Typography
             sx={{
-              color: "#F8FAFC",
+              color: "#F7F5EC",
               fontSize: "1.25rem",
               fontWeight: 800,
               lineHeight: 1.2,
@@ -123,7 +123,7 @@ const FeaturedCarousel = ({
           position: "relative",
           overflow: "hidden",
           borderRadius: "20px",
-          bgcolor: "#0F172A",
+          bgcolor: "#183D32",
           border: "1px solid rgba(255, 255, 255, 0.08)",
           boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.5)",
         }}
@@ -134,7 +134,7 @@ const FeaturedCarousel = ({
             position: "relative",
             width: "100%",
             height: { xs: 260, sm: 340, md: 400 },
-            bgcolor: "#1E293B",
+            bgcolor: "#254D3F",
             overflow: "hidden",
           }}
         >
@@ -165,11 +165,11 @@ const FeaturedCarousel = ({
                 alignItems: "center",
                 justifyContent: "center",
                 flexDirection: "column",
-                bgcolor: "#0F172A",
+                bgcolor: "#183D32",
               }}
             >
-              <LocalAtmRounded sx={{ fontSize: 64, color: "#334155", mb: 1 }} />
-              <Typography variant="body2" sx={{ color: "#64748B" }}>
+              <LocalAtmRounded sx={{ fontSize: 64, color: "#365C4B", mb: 1 }} />
+              <Typography variant="body2" sx={{ color: "#617B6C" }}>
                 No Image Available
               </Typography>
             </Box>
@@ -185,14 +185,14 @@ const FeaturedCarousel = ({
               top: "50%",
               transform: "translateY(-50%)",
               zIndex: 3,
-              bgcolor: "rgba(15, 23, 42, 0.65)",
+              bgcolor: "rgba(24,61,50, 0.65)",
               color: "#FFFFFF",
               backdropFilter: "blur(8px)",
               border: "1px solid rgba(255, 255, 255, 0.15)",
               transition: "all 0.2s ease",
               "&:hover": {
-                bgcolor: "#0D9488",
-                borderColor: "#5EEAD4",
+                bgcolor: "#087F5B",
+                borderColor: "#B9EBD0",
                 transform: "translateY(-50%) scale(1.1)",
               },
             }}
@@ -210,14 +210,14 @@ const FeaturedCarousel = ({
               top: "50%",
               transform: "translateY(-50%)",
               zIndex: 3,
-              bgcolor: "rgba(15, 23, 42, 0.65)",
+              bgcolor: "rgba(24,61,50, 0.65)",
               color: "#FFFFFF",
               backdropFilter: "blur(8px)",
               border: "1px solid rgba(255, 255, 255, 0.15)",
               transition: "all 0.2s ease",
               "&:hover": {
-                bgcolor: "#0D9488",
-                borderColor: "#5EEAD4",
+                bgcolor: "#087F5B",
+                borderColor: "#B9EBD0",
                 transform: "translateY(-50%) scale(1.1)",
               },
             }}
@@ -231,7 +231,7 @@ const FeaturedCarousel = ({
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.4) 50%, transparent 100%)",
+                "linear-gradient(to top, rgba(24,61,50, 0.95) 0%, rgba(24,61,50, 0.4) 50%, transparent 100%)",
               zIndex: 1,
               pointerEvents: "none",
             }}
@@ -259,7 +259,7 @@ const FeaturedCarousel = ({
                   variant="h5"
                   sx={{
                     fontWeight: 800,
-                    color: "#F8FAFC",
+                    color: "#F7F5EC",
                     fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
                     lineHeight: 1.2,
                   }}
@@ -272,7 +272,7 @@ const FeaturedCarousel = ({
                     variant="body2"
                     sx={{
                       mt: 0.75,
-                      color: "#94A3B8",
+                      color: "#839B8C",
                       fontSize: "0.875rem",
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
@@ -296,7 +296,7 @@ const FeaturedCarousel = ({
                   sx={{
                     fontWeight: 900,
                     fontSize: { xs: "1.5rem", sm: "1.8rem" },
-                    color: "#5EEAD4",
+                    color: "#B9EBD0",
                     letterSpacing: "-0.5px",
                   }}
                 >
@@ -308,18 +308,18 @@ const FeaturedCarousel = ({
                   endIcon={<ArrowForwardRounded />}
                   onClick={() => onProductClick?.(currentProduct)}
                   sx={{
-                    bgcolor: "#0D9488",
+                    bgcolor: "#087F5B",
                     color: "#FFFFFF",
                     fontWeight: 700,
                     px: 2.5,
                     py: 1,
                     borderRadius: "12px",
                     textTransform: "none",
-                    boxShadow: "0 4px 14px rgba(13, 148, 136, 0.4)",
+                    boxShadow: "0 4px 14px rgba(8,127,91, 0.4)",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                      bgcolor: "#0F766E",
-                      boxShadow: "0 6px 20px rgba(13, 148, 136, 0.6)",
+                      bgcolor: "#066649",
+                      boxShadow: "0 6px 20px rgba(8,127,91, 0.6)",
                       transform: "translateY(-2px)",
                     },
                   }}
@@ -350,13 +350,13 @@ const FeaturedCarousel = ({
                 width: index === activeStep ? 28 : 8,
                 borderRadius: "4px",
                 bgcolor:
-                  index === activeStep ? "#5EEAD4" : "rgba(255, 255, 255, 0.2)",
+                  index === activeStep ? "#B9EBD0" : "rgba(255, 255, 255, 0.2)",
                 cursor: "pointer",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 "&:hover": {
                   bgcolor:
                     index === activeStep
-                      ? "#5EEAD4"
+                      ? "#B9EBD0"
                       : "rgba(255, 255, 255, 0.4)",
                 },
               }}

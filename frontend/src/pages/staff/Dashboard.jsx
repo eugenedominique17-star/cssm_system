@@ -44,6 +44,8 @@ import {
 } from '@mui/icons-material';
 
 import API from '../../api/axios';
+import AnimatedNumber from '../../components/AnimatedNumber';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
 
 const StaffDashboard = () => {
   const navigate = useNavigate();
@@ -299,7 +301,7 @@ const StaffDashboard = () => {
       subtitle: `${lowStockProducts.length} low stock`,
       icon: <Inventory2Outlined />,
       color: '#047857',
-      background: '#ECFDF5',
+      background: '#D8F3E5',
       link: '/staff/products',
     },
     {
@@ -339,7 +341,7 @@ const StaffDashboard = () => {
       icon: <Inventory2Outlined />,
       link: '/staff/products',
       color: '#047857',
-      background: '#ECFDF5',
+      background: '#D8F3E5',
     },
     {
       label: 'Create Receipt',
@@ -382,17 +384,11 @@ const StaffDashboard = () => {
           gap: 1.5,
         }}
       >
-        <CircularProgress
-          size={44}
-          thickness={4}
-          sx={{
-            color: '#059669',
-          }}
-        />
+        <DashboardSkeleton />
 
         <Typography
           sx={{
-            color: '#64748B',
+            color: '#617B6C',
             fontSize: 13,
           }}
         >
@@ -802,7 +798,7 @@ const StaffDashboard = () => {
               sx={{
                 height: '100%',
                 cursor: 'pointer',
-                bgcolor: '#FFFFFF',
+                bgcolor: 'var(--sh-glass-bg)',
                 border: '1px solid #E8EEF3',
                 borderRadius: 3,
                 transition: 'all .22s ease',
@@ -849,20 +845,20 @@ const StaffDashboard = () => {
                 <Typography
                   sx={{
                     mt: 2.3,
-                    color: '#0F172A',
+                    color: '#183D32',
                     fontSize: 28,
                     lineHeight: 1,
                     fontWeight: 900,
                     letterSpacing: '-.03em',
                   }}
                 >
-                  {stat.value}
+                  <AnimatedNumber value={stat.value} />
                 </Typography>
 
                 <Typography
                   sx={{
                     mt: 0.8,
-                    color: '#475569',
+                    color: '#4C695A',
                     fontSize: 13,
                     fontWeight: 800,
                   }}
@@ -873,7 +869,7 @@ const StaffDashboard = () => {
                 <Typography
                   sx={{
                     mt: 0.45,
-                    color: '#94A3B8',
+                    color: '#839B8C',
                     fontSize: 10.5,
                   }}
                 >
@@ -905,9 +901,9 @@ const StaffDashboard = () => {
               height: '100%',
               p: 3,
               borderRadius: 4,
-              bgcolor: '#FFFFFF',
+              bgcolor: 'var(--sh-glass-bg)',
               border:
-                '1px solid #E2E8F0',
+                '1px solid #D5E5D9',
             }}
           >
             <Stack
@@ -921,7 +917,7 @@ const StaffDashboard = () => {
               <Box>
                 <Typography
                   sx={{
-                    color: '#0F172A',
+                    color: '#183D32',
                     fontSize: 16.5,
                     fontWeight: 850,
                   }}
@@ -932,7 +928,7 @@ const StaffDashboard = () => {
                 <Typography
                   sx={{
                     mt: 0.3,
-                    color: '#94A3B8',
+                    color: '#839B8C',
                     fontSize: 11,
                   }}
                 >
@@ -958,7 +954,7 @@ const StaffDashboard = () => {
                 >
                   <Typography
                     sx={{
-                      color: '#64748B',
+                      color: '#617B6C',
                       fontSize: 12,
                     }}
                   >
@@ -998,7 +994,7 @@ const StaffDashboard = () => {
                   sx={{
                     height: 8,
                     borderRadius: 10,
-                    bgcolor: '#ECFDF5',
+                    bgcolor: '#D8F3E5',
                     '& .MuiLinearProgress-bar':
                       {
                         bgcolor:
@@ -1041,7 +1037,7 @@ const StaffDashboard = () => {
                   <Box>
                     <Typography
                       sx={{
-                        color: '#334155',
+                        color: '#365C4B',
                         fontSize: 12,
                         fontWeight: 750,
                       }}
@@ -1051,7 +1047,7 @@ const StaffDashboard = () => {
 
                     <Typography
                       sx={{
-                        color: '#94A3B8',
+                        color: '#839B8C',
                         fontSize: 10.5,
                       }}
                     >
@@ -1104,7 +1100,7 @@ const StaffDashboard = () => {
                   <Box>
                     <Typography
                       sx={{
-                        color: '#334155',
+                        color: '#365C4B',
                         fontSize: 12,
                         fontWeight: 750,
                       }}
@@ -1114,7 +1110,7 @@ const StaffDashboard = () => {
 
                     <Typography
                       sx={{
-                        color: '#94A3B8',
+                        color: '#839B8C',
                         fontSize: 10.5,
                       }}
                     >
@@ -1177,9 +1173,9 @@ const StaffDashboard = () => {
               height: '100%',
               p: 3,
               borderRadius: 4,
-              bgcolor: '#FFFFFF',
+              bgcolor: 'var(--sh-glass-bg)',
               border:
-                '1px solid #E2E8F0',
+                '1px solid #D5E5D9',
             }}
           >
             <Stack
@@ -1193,7 +1189,7 @@ const StaffDashboard = () => {
               <Box>
                 <Typography
                   sx={{
-                    color: '#0F172A',
+                    color: '#183D32',
                     fontSize: 16.5,
                     fontWeight: 850,
                   }}
@@ -1204,7 +1200,7 @@ const StaffDashboard = () => {
                 <Typography
                   sx={{
                     mt: 0.3,
-                    color: '#94A3B8',
+                    color: '#839B8C',
                     fontSize: 11,
                   }}
                 >
@@ -1230,7 +1226,7 @@ const StaffDashboard = () => {
                     formatPrice(todaySales),
                   icon: <LocalAtmRounded />,
                   color: '#059669',
-                  background: '#ECFDF5',
+                  background: '#D8F3E5',
                 },
                 {
                   label: 'Transactions',
@@ -1267,7 +1263,7 @@ const StaffDashboard = () => {
                       p: 2,
                       height: '100%',
                       border:
-                        '1px solid #F1F5F9',
+                        '1px solid #EDF3E8',
                       borderRadius: 3,
                     }}
                   >
@@ -1295,7 +1291,7 @@ const StaffDashboard = () => {
                       <Box>
                         <Typography
                           sx={{
-                            color: '#94A3B8',
+                            color: '#839B8C',
                             fontSize: 10.5,
                             fontWeight: 700,
                           }}
@@ -1306,7 +1302,7 @@ const StaffDashboard = () => {
                         <Typography
                           sx={{
                             mt: 0.2,
-                            color: '#0F172A',
+                            color: '#183D32',
                             fontSize: 17,
                             fontWeight: 850,
                           }}
@@ -1328,7 +1324,7 @@ const StaffDashboard = () => {
       <Box sx={{ mb: 2 }}>
         <Typography
           sx={{
-            color: '#0F172A',
+            color: '#183D32',
             fontSize: 19,
             fontWeight: 850,
             letterSpacing: '-.02em',
@@ -1340,7 +1336,7 @@ const StaffDashboard = () => {
         <Typography
           sx={{
             mt: 0.3,
-            color: '#94A3B8',
+            color: '#839B8C',
             fontSize: 11.5,
           }}
         >
@@ -1368,9 +1364,9 @@ const StaffDashboard = () => {
               sx={{
                 height: '100%',
                 cursor: 'pointer',
-                bgcolor: '#FFFFFF',
+                bgcolor: 'var(--sh-glass-bg)',
                 border:
-                  '1px solid #E2E8F0',
+                  '1px solid #D5E5D9',
                 borderRadius: 4,
                 transition:
                   'all .22s ease',
@@ -1381,7 +1377,7 @@ const StaffDashboard = () => {
                   borderColor:
                     action.color,
                   boxShadow:
-                    '0 16px 36px rgba(15,23,42,.06)',
+                    '0 16px 36px rgba(24,61,50,.06)',
 
                   '& .action-arrow': {
                     transform:
@@ -1436,7 +1432,7 @@ const StaffDashboard = () => {
                 <Typography
                   sx={{
                     mt: 2,
-                    color: '#0F172A',
+                    color: '#183D32',
                     fontSize: 15,
                     fontWeight: 850,
                   }}
@@ -1448,7 +1444,7 @@ const StaffDashboard = () => {
                   sx={{
                     mt: 0.7,
                     minHeight: 38,
-                    color: '#64748B',
+                    color: '#617B6C',
                     fontSize: 11.5,
                     lineHeight: 1.6,
                   }}

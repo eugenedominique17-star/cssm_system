@@ -71,9 +71,10 @@ const INITIAL_FORM = {
 };
 
 const ReceiptManagement = () => {
+  const checkoutRequest = useRef(null);
+  const checkoutBusy = useRef(false);
   const [transactions, setTransactions] = useState([]);
   const [walkInRequests, setWalkInRequests] = useState([]);
-  const [cancelledRequests, setCancelledRequests] = useState([]);
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
 
@@ -102,7 +103,6 @@ const ReceiptManagement = () => {
   const [formData, setFormData] = useState(INITIAL_FORM);
 
   const alertTimerRef = useRef(null);
-  const knownCancelledRequestIdsRef = useRef(null);
 
   /* =========================================================
      ALERT
@@ -141,32 +141,13 @@ const ReceiptManagement = () => {
           setLoading(true);
         }
 
-        const [transactionsResponse, productsResponse, usersResponse, walkInResponse, cancelledResponse] =
+        const [transactionsResponse, productsResponse, usersResponse, walkInResponse] =
           await Promise.all([
             API.get("/transactions"),
             API.get("/products?active=true"),
             API.get("/users?role=client"),
             API.get("/transactions/walk-in-requests/pending"),
-            API.get("/transactions/walk-in-requests/cancelled"),
           ]);
-
-        const cancelledRequests = Array.isArray(cancelledResponse.data)
-          ? cancelledResponse.data
-          : [];
-        const cancelledRequestIds = new Set(cancelledRequests.map((request) => request.id));
-
-        if (knownCancelledRequestIdsRef.current) {
-          const newlyCancelled = cancelledRequests.find(
-            (request) => !knownCancelledRequestIdsRef.current.has(request.id),
-          );
-          if (newlyCancelled) {
-            showAlert(
-              `Order #${newlyCancelled.id} from ${newlyCancelled.submitted_by_name || "a client"} was cancelled.`,
-              "warning",
-            );
-          }
-        }
-        knownCancelledRequestIdsRef.current = cancelledRequestIds;
 
         setTransactions(
           Array.isArray(transactionsResponse.data)
@@ -182,7 +163,6 @@ const ReceiptManagement = () => {
         setWalkInRequests(
           Array.isArray(walkInResponse.data) ? walkInResponse.data : [],
         );
-        setCancelledRequests(cancelledRequests);
       } catch (error) {
         console.error("Failed to load receipt data:", error);
 
@@ -245,6 +225,7 @@ const ReceiptManagement = () => {
     formData.items.map((item) => String(item.product_id)).filter(Boolean);
 
   const resetForm = () => {
+    checkoutRequest.current = null;
     setWalkInRequestId(null);
     setTenderedAmount("");
     setFormData({
@@ -386,6 +367,16 @@ const ReceiptManagement = () => {
   ========================================================= */
 
   const validateReceipt = () => {
+    const selectedPaymentMethod = formData.payment_method || "cash";
+
+    if (!formData.user_id) {
+      return "Select a registered client account before creating a receipt.";
+    }
+
+    if (!["cash"].includes(selectedPaymentMethod)) {
+      return "Only cash payment is supported in this store flow.";
+    }
+
     if (!formData.items.length) {
       return "Please add at least one product.";
     }
@@ -432,6 +423,8 @@ const ReceiptManagement = () => {
   ========================================================= */
 
   const handleCreateReceipt = async () => {
+    if (checkoutBusy.current) return;
+    const selectedPaymentMethod = formData.payment_method || "cash";
     const validationError = validateReceipt();
 
     if (validationError) {
@@ -439,24 +432,42 @@ const ReceiptManagement = () => {
       return;
     }
 
+    if (!["cash"].includes(selectedPaymentMethod)) {
+      showAlert("Only cash payment is supported in this store flow.", "error");
+      return;
+    }
+
+    if (!Number.isFinite(Number(tenderedAmount)) || Number(tenderedAmount) < calculateTotal()) {
+      showAlert(
+        `Please enter a valid tendered amount of at least ${formatPrice(calculateTotal())}.`,
+        "error",
+      );
+      return;
+    }
+
+    checkoutBusy.current = true;
     setCreating(true);
 
     try {
       const payload = {
-        user_id: formData.user_id ? Number(formData.user_id) : null,
-
-        // Cash-only based on store workflow
-        payment_method: "cash",
-
+        user_id: Number(formData.user_id),
+        payment_method: selectedPaymentMethod,
+        tendered_amount: Number(tenderedAmount),
         items: formData.items.map((item) => ({
           product_id: Number(item.product_id),
           quantity: Number(item.quantity),
         })),
       };
 
+      const signature = JSON.stringify(payload);
+      if (!checkoutRequest.current || checkoutRequest.current.signature !== signature) {
+        checkoutRequest.current = { signature, id: crypto.randomUUID() };
+      }
+      payload.request_id = checkoutRequest.current.id;
+
       const response = walkInRequestId
         ? await API.post(`/transactions/walk-in-requests/${walkInRequestId}/complete`, {
-            payment_method: "cash",
+            payment_method: selectedPaymentMethod,
             tendered_amount: Number(tenderedAmount),
           })
         : await API.post("/transactions", payload);
@@ -468,6 +479,7 @@ const ReceiptManagement = () => {
       );
 
       setDialogOpen(false);
+      checkoutRequest.current = null;
       resetForm();
 
       await fetchData(true);
@@ -481,6 +493,7 @@ const ReceiptManagement = () => {
         "error",
       );
     } finally {
+      checkoutBusy.current = false;
       setCreating(false);
     }
   };
@@ -563,13 +576,44 @@ const ReceiptManagement = () => {
 
   const filteredClients = useMemo(() => {
     const query = clientSearch.trim().toLowerCase();
-    if (!query) return users;
+    const activeClients = users.filter((user) => user.status === "active");
+    if (!query) return activeClients;
 
-    return users.filter((user) =>
+    return activeClients.filter((user) =>
       [user.name, user.email, user.user_id, user.id]
         .some((value) => String(value || "").toLowerCase().includes(query)),
     );
   }, [users, clientSearch]);
+
+  const clientSpendingSummary = useMemo(() => {
+    const transactionsByClient = transactions.reduce((summary, transaction) => {
+      if (transaction.user_id == null) return summary;
+
+      const clientId = String(transaction.user_id);
+      const current = summary[clientId] || {
+        transactionCount: 0,
+        totalSpent: 0,
+      };
+
+      current.transactionCount += 1;
+      current.totalSpent += Number(transaction.total_amount || 0);
+      summary[clientId] = current;
+      return summary;
+    }, {});
+
+    return users
+      .map((user) => {
+        const clientId = String(user.id);
+        const spending = transactionsByClient[clientId];
+
+        return {
+          ...user,
+          transactionCount: spending?.transactionCount || 0,
+          totalSpent: spending?.totalSpent || 0,
+        };
+      })
+      .sort((first, second) => second.totalSpent - first.totalSpent);
+  }, [transactions, users]);
 
   /* =========================================================
      LOADING
@@ -597,7 +641,7 @@ const ReceiptManagement = () => {
 
         <Typography
           sx={{
-            color: "#64748B",
+            color: "#617B6C",
             fontSize: 13,
           }}
         >
@@ -611,14 +655,14 @@ const ReceiptManagement = () => {
     <Box
       sx={{
         minHeight: "100%",
-        bgcolor: "#F8FAFC",
+        bgcolor: "var(--sh-page-tint)",
         p: {
           xs: 2,
           sm: 3,
         },
 
         "@media print": {
-          bgcolor: "#FFFFFF",
+          bgcolor: "var(--sh-glass-bg)",
           p: 0,
 
           "& .no-print": {
@@ -664,7 +708,7 @@ const ReceiptManagement = () => {
         <Box>
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#183D32",
 
               fontSize: {
                 xs: "1.8rem",
@@ -685,7 +729,7 @@ const ReceiptManagement = () => {
             sx={{
               mt: 0.8,
 
-              color: "#64748B",
+              color: "#617B6C",
 
               fontSize: 14,
             }}
@@ -704,11 +748,11 @@ const ReceiptManagement = () => {
                   width: 46,
                   height: 46,
 
-                  bgcolor: "#FFFFFF",
+                  bgcolor: "var(--sh-glass-bg)",
 
-                  border: "1px solid #E2E8F0",
+                  border: "1px solid #D5E5D9",
 
-                  boxShadow: "0 4px 12px rgba(15,23,42,.03)",
+                  boxShadow: "0 4px 12px rgba(24,61,50,.03)",
 
                   "&:hover": {
                     bgcolor: "#F0FDF4",
@@ -779,61 +823,6 @@ const ReceiptManagement = () => {
         </Alert>
       )}
 
-      {cancelledRequests.length > 0 && (
-        <Box className="no-print" sx={{ mb: 3 }}>
-          <Alert
-            severity="warning"
-            icon={<WarningAmberRounded />}
-            sx={{ mb: 1.5, borderRadius: 3 }}
-          >
-            {cancelledRequests.length === 1
-              ? `Order #${cancelledRequests[0].id} from ${cancelledRequests[0].submitted_by_name || "a client"} was cancelled.`
-              : `${cancelledRequests.length} client orders were cancelled.`}
-          </Alert>
-
-          <Paper
-            elevation={0}
-            sx={{
-              p: { xs: 2, md: 2.5 },
-              borderRadius: 3,
-              border: "1px solid #FDE68A",
-              bgcolor: "#FFFBEB",
-            }}
-          >
-            <Typography sx={{ color: "#92400E", fontSize: 16, fontWeight: 850, mb: 1.2 }}>
-              Cancelled Walk-in Orders
-            </Typography>
-            <Stack spacing={1}>
-              {cancelledRequests.map((request) => (
-                <Box
-                  key={request.id}
-                  sx={{
-                    p: 1.5,
-                    bgcolor: "#FFFFFF",
-                    border: "1px solid #FDE68A",
-                    borderRadius: 2,
-                  }}
-                >
-                  <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1}>
-                    <Box>
-                      <Typography sx={{ color: "#0F172A", fontSize: 13.5, fontWeight: 800 }}>
-                        Order #{request.id} · {request.submitted_by_name || "Client"}
-                      </Typography>
-                      <Typography sx={{ color: "#64748B", fontSize: 11.5, mt: 0.25 }}>
-                        {Array.isArray(request.data?.items) ? request.data.items.map((item) => `${item.name || "Product"} x${item.quantity}`).join(", ") : "No item details"}
-                      </Typography>
-                    </Box>
-                    <Typography sx={{ color: "#92400E", fontSize: 11.5, whiteSpace: "nowrap" }}>
-                      {formatDate(request.reviewed_at || request.created_at)}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))}
-            </Stack>
-          </Paper>
-        </Box>
-      )}
-
       {/* =====================================================
           KPI CARDS
       ====================================================== */}
@@ -853,7 +842,7 @@ const ReceiptManagement = () => {
             value: formatPrice(totalSales),
             icon: <LocalAtmRounded />,
             color: "#059669",
-            background: "#ECFDF5",
+            background: "#D8F3E5",
           },
 
           {
@@ -864,13 +853,6 @@ const ReceiptManagement = () => {
             background: "#F5F3FF",
           },
 
-          {
-            title: "Walk-in Sales",
-            value: walkInCount,
-            icon: <StorefrontRounded />,
-            color: "#D97706",
-            background: "#FFFBEB",
-          },
         ].map((item) => (
           <Grid item xs={12} sm={6} lg={3} key={item.title}>
             <Paper
@@ -883,9 +865,9 @@ const ReceiptManagement = () => {
 
                 height: "100%",
 
-                bgcolor: "#FFFFFF",
+                bgcolor: "var(--sh-glass-bg)",
 
-                border: "1px solid #E2E8F0",
+                border: "1px solid #D5E5D9",
 
                 borderRadius: 4,
 
@@ -894,7 +876,7 @@ const ReceiptManagement = () => {
                 "&:hover": {
                   transform: "translateY(-4px)",
 
-                  boxShadow: "0 16px 36px rgba(15,23,42,.07)",
+                  boxShadow: "0 16px 36px rgba(24,61,50,.07)",
                 },
               }}
             >
@@ -923,7 +905,7 @@ const ReceiptManagement = () => {
                 <Box>
                   <Typography
                     sx={{
-                      color: "#64748B",
+                      color: "#617B6C",
 
                       fontSize: 11.5,
 
@@ -937,7 +919,7 @@ const ReceiptManagement = () => {
                     sx={{
                       mt: 0.2,
 
-                      color: "#0F172A",
+                      color: "#183D32",
 
                       fontSize: item.title === "Total Sales" ? 20 : 25,
 
@@ -991,13 +973,13 @@ const ReceiptManagement = () => {
                 justifyContent="space-between"
                 alignItems={{ xs: "stretch", sm: "center" }}
                 spacing={1}
-                sx={{ p: 1.5, bgcolor: "#FFFFFF", border: "1px solid #FDE68A", borderRadius: 2 }}
+                sx={{ p: 1.5, bgcolor: "var(--sh-glass-bg)", border: "1px solid #FDE68A", borderRadius: 2 }}
               >
                 <Box>
-                  <Typography sx={{ color: "#0F172A", fontSize: 13.5, fontWeight: 800 }}>
+                  <Typography sx={{ color: "#183D32", fontSize: 13.5, fontWeight: 800 }}>
                     Request #{request.id} · {request.submitted_by_name || "Client"}
                   </Typography>
-                  <Typography sx={{ color: "#64748B", fontSize: 11.5, mt: 0.25 }}>
+                  <Typography sx={{ color: "#617B6C", fontSize: 11.5, mt: 0.25 }}>
                     {Array.isArray(request.data?.items) ? request.data.items.length : 0} product type(s) · {formatDate(request.created_at)}
                   </Typography>
                 </Box>
@@ -1016,6 +998,99 @@ const ReceiptManagement = () => {
       )}
 
       {/* =====================================================
+          CLIENT SPENDING SUMMARY
+      ====================================================== */}
+
+      {users.length > 0 && (
+        <Paper
+          className="no-print"
+          elevation={0}
+          sx={{
+            mb: 3,
+            borderRadius: 4,
+            border: "1px solid #D1FAE5",
+            overflow: "hidden",
+            bgcolor: "var(--sh-glass-bg)",
+          }}
+        >
+          <Box
+            sx={{
+              px: { xs: 2.5, md: 3 },
+              py: 2.4,
+              borderBottom: "1px solid #D8F3E5",
+              bgcolor: "#F0FDF4",
+            }}
+          >
+            <Typography sx={{ color: "#065F46", fontSize: 17, fontWeight: 850 }}>
+              Client Spending Summary
+            </Typography>
+            <Typography sx={{ mt: 0.25, color: "#047857", fontSize: 11.5 }}>
+              One total per registered client from completed transactions.
+            </Typography>
+          </Box>
+
+          <TableContainer>
+            <Table
+              sx={{
+                minWidth: 620,
+                "& th": {
+                  bgcolor: "#FAFFFC",
+                  color: "#617B6C",
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: ".05em",
+                  borderBottom: "1px solid #D1FAE5",
+                },
+                "& td": {
+                  borderBottom: "1px solid #EDF3E8",
+                  py: 1.5,
+                },
+              }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>Client</TableCell>
+                  <TableCell>Identifier</TableCell>
+                  <TableCell>Completed Transactions</TableCell>
+                  <TableCell>Total Spent</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {clientSpendingSummary.map((client) => (
+                  <TableRow key={client.id} hover>
+                    <TableCell>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <PersonOutlineRounded sx={{ color: "#839B8C", fontSize: 18 }} />
+                        <Typography sx={{ color: "#365C4B", fontSize: 13, fontWeight: 750 }}>
+                          {client.name || "Unnamed client"}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ color: "#617B6C", fontSize: 12.5 }}>
+                        {client.email || client.user_id || `#${client.id}`}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ color: "#365C4B", fontSize: 13, fontWeight: 750 }}>
+                        {client.transactionCount}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ color: "#047857", fontSize: 14, fontWeight: 900 }}>
+                        {formatPrice(client.totalSpent)}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
+
+      {/* =====================================================
           RECEIPT HISTORY
       ====================================================== */}
 
@@ -1025,11 +1100,11 @@ const ReceiptManagement = () => {
         sx={{
           borderRadius: 4,
 
-          border: "1px solid #E2E8F0",
+          border: "1px solid #D5E5D9",
 
           overflow: "hidden",
 
-          bgcolor: "#FFFFFF",
+          bgcolor: "var(--sh-glass-bg)",
         }}
       >
         {/* TITLE + FILTERS */}
@@ -1043,7 +1118,7 @@ const ReceiptManagement = () => {
 
             py: 2.4,
 
-            borderBottom: "1px solid #F1F5F9",
+            borderBottom: "1px solid #EDF3E8",
           }}
         >
           <Stack
@@ -1068,7 +1143,7 @@ const ReceiptManagement = () => {
 
                   placeItems: "center",
 
-                  bgcolor: "#ECFDF5",
+                  bgcolor: "#D8F3E5",
 
                   color: "#059669",
 
@@ -1081,7 +1156,7 @@ const ReceiptManagement = () => {
               <Box>
                 <Typography
                   sx={{
-                    color: "#0F172A",
+                    color: "#183D32",
 
                     fontSize: 17,
 
@@ -1095,7 +1170,7 @@ const ReceiptManagement = () => {
                   sx={{
                     mt: 0.2,
 
-                    color: "#94A3B8",
+                    color: "#839B8C",
 
                     fontSize: 11.5,
                   }}
@@ -1123,7 +1198,7 @@ const ReceiptManagement = () => {
                     <InputAdornment position="start">
                       <SearchRounded
                         sx={{
-                          color: "#94A3B8",
+                          color: "#839B8C",
                         }}
                       />
                     </InputAdornment>
@@ -1192,7 +1267,7 @@ const ReceiptManagement = () => {
 
                 borderRadius: 4,
 
-                bgcolor: "#ECFDF5",
+                bgcolor: "#D8F3E5",
 
                 color: "#059669",
               }}
@@ -1206,7 +1281,7 @@ const ReceiptManagement = () => {
 
             <Typography
               sx={{
-                color: "#0F172A",
+                color: "#183D32",
 
                 fontSize: 17,
 
@@ -1222,7 +1297,7 @@ const ReceiptManagement = () => {
               sx={{
                 mt: 0.8,
 
-                color: "#64748B",
+                color: "#617B6C",
 
                 fontSize: 13,
               }}
@@ -1239,9 +1314,9 @@ const ReceiptManagement = () => {
                 minWidth: 850,
 
                 "& th": {
-                  bgcolor: "#F8FAFC",
+                  bgcolor: "var(--sh-page-tint)",
 
-                  color: "#64748B",
+                  color: "#617B6C",
 
                   fontSize: 10.5,
 
@@ -1251,11 +1326,11 @@ const ReceiptManagement = () => {
 
                   letterSpacing: ".05em",
 
-                  borderBottom: "1px solid #E2E8F0",
+                  borderBottom: "1px solid #D5E5D9",
                 },
 
                 "& td": {
-                  borderBottom: "1px solid #F1F5F9",
+                  borderBottom: "1px solid #EDF3E8",
 
                   py: 1.7,
                 },
@@ -1309,7 +1384,7 @@ const ReceiptManagement = () => {
 
                         <Typography
                           sx={{
-                            color: "#0F172A",
+                            color: "#183D32",
 
                             fontFamily: "monospace",
 
@@ -1329,13 +1404,13 @@ const ReceiptManagement = () => {
                           sx={{
                             fontSize: 18,
 
-                            color: "#94A3B8",
+                            color: "#839B8C",
                           }}
                         />
 
                         <Typography
                           sx={{
-                            color: "#334155",
+                            color: "#365C4B",
 
                             fontSize: 13,
 
@@ -1367,7 +1442,7 @@ const ReceiptManagement = () => {
                         icon={<LocalAtmRounded />}
                         label="Cash"
                         sx={{
-                          bgcolor: "#ECFDF5",
+                          bgcolor: "#D8F3E5",
 
                           color: "#047857",
 
@@ -1383,7 +1458,7 @@ const ReceiptManagement = () => {
                     <TableCell>
                       <Typography
                         sx={{
-                          color: "#64748B",
+                          color: "#617B6C",
 
                           fontSize: 12.5,
                         }}
@@ -1531,7 +1606,7 @@ const ReceiptManagement = () => {
 
             py: "28px !important",
 
-            bgcolor: "#FAFCFB",
+            bgcolor: "var(--sh-page-tint)",
           }}
         >
           {/* CUSTOMER */}
@@ -1540,7 +1615,7 @@ const ReceiptManagement = () => {
             sx={{
               mb: 1.5,
 
-              color: "#94A3B8",
+              color: "#839B8C",
 
               fontSize: 10.5,
 
@@ -1566,7 +1641,7 @@ const ReceiptManagement = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchRounded sx={{ color: "#94A3B8" }} />
+                      <SearchRounded sx={{ color: "#839B8C" }} />
                     </InputAdornment>
                   ),
                 }}
@@ -1578,6 +1653,7 @@ const ReceiptManagement = () => {
                 <Select
                   value={formData.user_id}
                   label="Client"
+                  required
                   onChange={(event) =>
                     setFormData((previous) => ({
                       ...previous,
@@ -1586,8 +1662,6 @@ const ReceiptManagement = () => {
                     }))
                   }
                 >
-                  <MenuItem value="">Walk-in Customer</MenuItem>
-
                   {filteredClients.map((user) => (
                     <MenuItem key={user.id} value={user.id}>
                       {user.name} — {user.email || user.user_id || `#${user.id}`}
@@ -1603,60 +1677,28 @@ const ReceiptManagement = () => {
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <Paper
-                elevation={0}
-                sx={{
-                  height: 56,
-
-                  px: 2,
-
-                  display: "flex",
-
-                  alignItems: "center",
-
-                  gap: 1.2,
-
-                  bgcolor: "#ECFDF5",
-
-                  border: "1px solid #D1FAE5",
-
-                  borderRadius: 2,
-                }}
-              >
-                <LocalAtmRounded
+              <FormControl fullWidth size="small">
+                <InputLabel>Payment Method</InputLabel>
+                <Select
+                  value={formData.payment_method || "cash"}
+                  label="Payment Method"
+                  onChange={(event) =>
+                    setFormData((previous) => ({
+                      ...previous,
+                      payment_method: event.target.value,
+                    }))
+                  }
                   sx={{
-                    color: "#059669",
+                    bgcolor: "#D8F3E5",
+                    borderRadius: 2,
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#D1FAE5",
+                    },
                   }}
-                />
-
-                <Box>
-                  <Typography
-                    sx={{
-                      color: "#94A3B8",
-
-                      fontSize: 9.5,
-
-                      fontWeight: 800,
-
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Payment
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "#047857",
-
-                      fontSize: 13,
-
-                      fontWeight: 850,
-                    }}
-                  >
-                    Cash
-                  </Typography>
-                </Box>
-              </Paper>
+                >
+                  <MenuItem value="cash">Cash</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
           </Grid>
 
@@ -1673,7 +1715,7 @@ const ReceiptManagement = () => {
             <Box>
               <Typography
                 sx={{
-                  color: "#0F172A",
+                  color: "#183D32",
 
                   fontSize: 16,
 
@@ -1687,7 +1729,7 @@ const ReceiptManagement = () => {
                 sx={{
                   mt: 0.3,
 
-                  color: "#94A3B8",
+                  color: "#839B8C",
 
                   fontSize: 11.5,
                 }}
@@ -1732,9 +1774,9 @@ const ReceiptManagement = () => {
 
                     borderRadius: 3,
 
-                    border: "1px solid #E2E8F0",
+                    border: "1px solid #D5E5D9",
 
-                    bgcolor: "#FFFFFF",
+                    bgcolor: "var(--sh-glass-bg)",
 
                     transition: "all .2s ease",
 
@@ -1795,7 +1837,7 @@ const ReceiptManagement = () => {
                         sx={{
                           height: 40,
 
-                          border: "1px solid #E2E8F0",
+                          border: "1px solid #D5E5D9",
 
                           borderRadius: 2.5,
 
@@ -1816,7 +1858,7 @@ const ReceiptManagement = () => {
 
                             textAlign: "center",
 
-                            color: "#0F172A",
+                            color: "#183D32",
 
                             fontWeight: 800,
 
@@ -1850,7 +1892,7 @@ const ReceiptManagement = () => {
                       >
                         <Typography
                           sx={{
-                            color: "#94A3B8",
+                            color: "#839B8C",
 
                             fontSize: 9.5,
 
@@ -1926,7 +1968,7 @@ const ReceiptManagement = () => {
                       <Typography
                         sx={{
                           color:
-                            Number(product.stock) <= 5 ? "#D97706" : "#64748B",
+                            Number(product.stock) <= 5 ? "#D97706" : "#617B6C",
 
                           fontSize: 10.5,
 
@@ -1953,7 +1995,7 @@ const ReceiptManagement = () => {
 
               borderRadius: 4,
 
-              background: "linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)",
+              background: "linear-gradient(135deg, #D8F3E5 0%, #F0FDF4 100%)",
 
               border: "1px solid #D1FAE5",
             }}
@@ -1962,7 +2004,7 @@ const ReceiptManagement = () => {
               <Stack direction="row" justifyContent="space-between">
                 <Typography
                   sx={{
-                    color: "#64748B",
+                    color: "#617B6C",
 
                     fontSize: 12.5,
                   }}
@@ -1972,7 +2014,7 @@ const ReceiptManagement = () => {
 
                 <Typography
                   sx={{
-                    color: "#334155",
+                    color: "#365C4B",
 
                     fontWeight: 750,
 
@@ -1986,7 +2028,7 @@ const ReceiptManagement = () => {
               <Stack direction="row" justifyContent="space-between">
                 <Typography
                   sx={{
-                    color: "#64748B",
+                    color: "#617B6C",
 
                     fontSize: 12.5,
                   }}
@@ -1996,14 +2038,14 @@ const ReceiptManagement = () => {
 
                 <Typography
                   sx={{
-                    color: "#334155",
+                    color: "#365C4B",
 
                     fontWeight: 750,
 
                     fontSize: 12.5,
                   }}
                 >
-                  Cash
+                  {formData.payment_method === "cash" ? "Cash" : "Cash"}
                 </Typography>
               </Stack>
 
@@ -2023,7 +2065,7 @@ const ReceiptManagement = () => {
 
                   <Typography
                     sx={{
-                      color: "#334155",
+                      color: "#365C4B",
 
                       fontSize: 14,
 
@@ -2053,9 +2095,9 @@ const ReceiptManagement = () => {
 
           <Paper
             elevation={0}
-            sx={{ mt: 2, p: 2, border: "1px solid #E2E8F0", borderRadius: 3, bgcolor: "#FFFFFF" }}
+            sx={{ mt: 2, p: 2, border: "1px solid #D5E5D9", borderRadius: 3, bgcolor: "var(--sh-glass-bg)" }}
           >
-            <Typography sx={{ color: "#334155", fontSize: 13, fontWeight: 800, mb: 1 }}>
+            <Typography sx={{ color: "#365C4B", fontSize: 13, fontWeight: 800, mb: 1 }}>
               Cash Calculator
             </Typography>
             <Grid container spacing={1.5} alignItems="center">
@@ -2089,9 +2131,9 @@ const ReceiptManagement = () => {
 
             py: 2.5,
 
-            bgcolor: "#FFFFFF",
+            bgcolor: "var(--sh-glass-bg)",
 
-            borderTop: "1px solid #F1F5F9",
+            borderTop: "1px solid #EDF3E8",
           }}
         >
           <Button
@@ -2100,7 +2142,7 @@ const ReceiptManagement = () => {
             sx={{
               minWidth: 100,
 
-              color: "#64748B",
+              color: "#617B6C",
 
               borderRadius: 3,
 
@@ -2118,7 +2160,7 @@ const ReceiptManagement = () => {
             disabled={
               creating ||
               calculateTotal() <= 0 ||
-              (Boolean(walkInRequestId) && Number(tenderedAmount) < calculateTotal())
+              Number(tenderedAmount) < calculateTotal()
             }
             startIcon={creating ? null : <ReceiptLongRounded />}
             sx={{
@@ -2182,7 +2224,7 @@ const ReceiptManagement = () => {
 
             py: 2.5,
 
-            borderBottom: "1px solid #F1F5F9",
+            borderBottom: "1px solid #EDF3E8",
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1.2}>
@@ -2195,7 +2237,7 @@ const ReceiptManagement = () => {
 
                 placeItems: "center",
 
-                bgcolor: "#ECFDF5",
+                bgcolor: "#D8F3E5",
 
                 color: "#059669",
 
@@ -2208,7 +2250,7 @@ const ReceiptManagement = () => {
             <Box sx={{ flex: 1 }}>
               <Typography
                 sx={{
-                  color: "#0F172A",
+                  color: "#183D32",
 
                   fontWeight: 850,
 
@@ -2222,7 +2264,7 @@ const ReceiptManagement = () => {
                 sx={{
                   mt: 0.2,
 
-                  color: "#94A3B8",
+                  color: "#839B8C",
 
                   fontSize: 11,
                 }}
@@ -2241,7 +2283,7 @@ const ReceiptManagement = () => {
           sx={{
             p: "28px !important",
 
-            bgcolor: "#F8FAFC",
+            bgcolor: "var(--sh-page-tint)",
           }}
         >
           {viewLoading ? (
@@ -2266,7 +2308,7 @@ const ReceiptManagement = () => {
 
               <Typography
                 sx={{
-                  color: "#64748B",
+                  color: "#617B6C",
 
                   fontSize: 12,
                 }}
@@ -2289,9 +2331,9 @@ const ReceiptManagement = () => {
                     sm: 3.5,
                   },
 
-                  bgcolor: "#FFFFFF",
+                  bgcolor: "var(--sh-glass-bg)",
 
-                  border: "1px solid #E2E8F0",
+                  border: "1px solid #D5E5D9",
 
                   borderRadius: 4,
                 }}
@@ -2316,7 +2358,7 @@ const ReceiptManagement = () => {
 
                       placeItems: "center",
 
-                      bgcolor: "#ECFDF5",
+                      bgcolor: "#D8F3E5",
 
                       borderRadius: 3,
                     }}
@@ -2334,7 +2376,7 @@ const ReceiptManagement = () => {
                     sx={{
                       mt: 1,
 
-                      color: "#0F172A",
+                      color: "#183D32",
 
                       fontSize: 21,
 
@@ -2350,7 +2392,7 @@ const ReceiptManagement = () => {
                     sx={{
                       mt: 0.2,
 
-                      color: "#64748B",
+                      color: "#617B6C",
 
                       fontSize: 10.5,
                     }}
@@ -2367,7 +2409,7 @@ const ReceiptManagement = () => {
                     sx={{
                       mt: 1.5,
 
-                      bgcolor: "#F8FAFC",
+                      bgcolor: "var(--sh-page-tint)",
 
                       fontFamily: "monospace",
 
@@ -2401,7 +2443,7 @@ const ReceiptManagement = () => {
                     >
                       <Typography
                         sx={{
-                          color: "#94A3B8",
+                          color: "#839B8C",
 
                           fontSize: 11.5,
                         }}
@@ -2413,7 +2455,7 @@ const ReceiptManagement = () => {
                         sx={{
                           maxWidth: "65%",
 
-                          color: "#334155",
+                          color: "#365C4B",
 
                           fontSize: 11.5,
 
@@ -2436,7 +2478,7 @@ const ReceiptManagement = () => {
                   sx={{
                     mb: 1.5,
 
-                    color: "#64748B",
+                    color: "#617B6C",
 
                     fontSize: 10,
 
@@ -2461,7 +2503,7 @@ const ReceiptManagement = () => {
                         <Box>
                           <Typography
                             sx={{
-                              color: "#0F172A",
+                              color: "#183D32",
 
                               fontSize: 12.5,
 
@@ -2475,7 +2517,7 @@ const ReceiptManagement = () => {
                             sx={{
                               mt: 0.2,
 
-                              color: "#94A3B8",
+                              color: "#839B8C",
 
                               fontSize: 10.5,
                             }}
@@ -2486,7 +2528,7 @@ const ReceiptManagement = () => {
 
                         <Typography
                           sx={{
-                            color: "#334155",
+                            color: "#365C4B",
 
                             fontSize: 12.5,
 
@@ -2511,7 +2553,7 @@ const ReceiptManagement = () => {
                 >
                   <Typography
                     sx={{
-                      color: "#334155",
+                      color: "#365C4B",
 
                       fontSize: 14,
 
@@ -2534,6 +2576,33 @@ const ReceiptManagement = () => {
                   </Typography>
                 </Stack>
 
+                {selectedTransaction.tendered_amount != null && (
+                  <Stack spacing={0.8} sx={{ mt: 1.5 }}>
+                    <Stack direction="row" justifyContent="space-between" spacing={2}>
+                      <Typography sx={{ color: "#617B6C", fontSize: 12 }}>
+                        Cash Received
+                      </Typography>
+                      <Typography sx={{ color: "#365C4B", fontSize: 12, fontWeight: 750 }}>
+                        {formatPrice(selectedTransaction.tendered_amount)}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between" spacing={2}>
+                      <Typography sx={{ color: "#617B6C", fontSize: 12 }}>
+                        Change
+                      </Typography>
+                      <Typography sx={{ color: "#047857", fontSize: 12, fontWeight: 850 }}>
+                        {formatPrice(
+                          selectedTransaction.change_amount ?? Math.max(
+                            0,
+                            Number(selectedTransaction.tendered_amount) -
+                              Number(selectedTransaction.total_amount),
+                          ),
+                        )}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                )}
+
                 <Divider sx={{ my: 2.5 }} />
 
                 <Box
@@ -2543,7 +2612,7 @@ const ReceiptManagement = () => {
                 >
                   <Typography
                     sx={{
-                      color: "#64748B",
+                      color: "#617B6C",
 
                       fontSize: 11,
 
@@ -2581,7 +2650,7 @@ const ReceiptManagement = () => {
           <Button
             onClick={() => setViewDialog(false)}
             sx={{
-              color: "#64748B",
+              color: "#617B6C",
 
               borderRadius: 3,
 

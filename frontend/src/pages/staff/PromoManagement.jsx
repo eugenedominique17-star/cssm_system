@@ -235,7 +235,7 @@ const PromoManagement = () => {
         label: "Active",
         icon: <CheckCircleRounded />,
         color: "#047857",
-        background: "#ECFDF5",
+        background: "#D8F3E5",
         border: "#A7F3D0",
       },
 
@@ -258,9 +258,9 @@ const PromoManagement = () => {
       expired: {
         label: "Expired",
         icon: <WarningAmberRounded />,
-        color: "#64748B",
-        background: "#F8FAFC",
-        border: "#E2E8F0",
+        color: "#617B6C",
+        background: "var(--sh-page-tint)",
+        border: "#D5E5D9",
       },
 
       rejected: {
@@ -587,7 +587,7 @@ const PromoManagement = () => {
 
         <Typography
           sx={{
-            color: "#64748B",
+            color: "#617B6C",
             fontSize: 13,
           }}
         >
@@ -601,7 +601,7 @@ const PromoManagement = () => {
     <Box
       sx={{
         minHeight: "100%",
-        bgcolor: "#F8FAFC",
+        bgcolor: "var(--sh-page-tint)",
 
         p: {
           xs: 2,
@@ -637,7 +637,7 @@ const PromoManagement = () => {
         <Box>
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#183D32",
 
               fontSize: {
                 xs: "1.85rem",
@@ -657,7 +657,7 @@ const PromoManagement = () => {
           <Typography
             sx={{
               mt: 0.8,
-              color: "#64748B",
+              color: "#617B6C",
               fontSize: 14,
             }}
           >
@@ -675,9 +675,9 @@ const PromoManagement = () => {
                   width: 46,
                   height: 46,
 
-                  bgcolor: "#FFFFFF",
+                  bgcolor: "var(--sh-glass-bg)",
 
-                  border: "1px solid #E2E8F0",
+                  border: "1px solid #D5E5D9",
 
                   "&:hover": {
                     bgcolor: "#F0FDF4",
@@ -763,7 +763,7 @@ const PromoManagement = () => {
             value: activeCount,
             icon: <CheckCircleRounded />,
             color: "#059669",
-            background: "#ECFDF5",
+            background: "#D8F3E5",
           },
 
           {
@@ -790,9 +790,9 @@ const PromoManagement = () => {
 
                 height: "100%",
 
-                bgcolor: "#FFFFFF",
+                bgcolor: "var(--sh-glass-bg)",
 
-                border: "1px solid #E2E8F0",
+                border: "1px solid #D5E5D9",
 
                 borderRadius: 4,
 
@@ -801,7 +801,7 @@ const PromoManagement = () => {
                 "&:hover": {
                   transform: "translateY(-4px)",
 
-                  boxShadow: "0 16px 36px rgba(15,23,42,.07)",
+                  boxShadow: "0 16px 36px rgba(24,61,50,.07)",
                 },
               }}
             >
@@ -830,7 +830,7 @@ const PromoManagement = () => {
                 <Box>
                   <Typography
                     sx={{
-                      color: "#64748B",
+                      color: "#617B6C",
 
                       fontSize: 11.5,
 
@@ -844,7 +844,7 @@ const PromoManagement = () => {
                     sx={{
                       mt: 0.2,
 
-                      color: "#0F172A",
+                      color: "#183D32",
 
                       fontSize: 25,
 
@@ -867,9 +867,9 @@ const PromoManagement = () => {
       <Paper
         elevation={0}
         sx={{
-          bgcolor: "#FFFFFF",
+          bgcolor: "var(--sh-glass-bg)",
 
-          border: "1px solid #E2E8F0",
+          border: "1px solid #D5E5D9",
 
           borderRadius: 4,
 
@@ -887,7 +887,7 @@ const PromoManagement = () => {
 
             py: 2.4,
 
-            borderBottom: "1px solid #F1F5F9",
+            borderBottom: "1px solid #EDF3E8",
           }}
         >
           <Stack
@@ -925,7 +925,7 @@ const PromoManagement = () => {
               <Box>
                 <Typography
                   sx={{
-                    color: "#0F172A",
+                    color: "#183D32",
 
                     fontSize: 17,
 
@@ -939,7 +939,7 @@ const PromoManagement = () => {
                   sx={{
                     mt: 0.2,
 
-                    color: "#94A3B8",
+                    color: "#839B8C",
 
                     fontSize: 11.5,
                   }}
@@ -967,7 +967,7 @@ const PromoManagement = () => {
                     <InputAdornment position="start">
                       <SearchRounded
                         sx={{
-                          color: "#94A3B8",
+                          color: "#839B8C",
                         }}
                       />
                     </InputAdornment>
@@ -1052,7 +1052,7 @@ const PromoManagement = () => {
 
             <Typography
               sx={{
-                color: "#0F172A",
+                color: "#183D32",
                 fontSize: 17,
                 fontWeight: 850,
               }}
@@ -1065,7 +1065,7 @@ const PromoManagement = () => {
             <Typography
               sx={{
                 mt: 0.8,
-                color: "#64748B",
+                color: "#617B6C",
                 fontSize: 13,
               }}
             >
@@ -1109,9 +1109,9 @@ const PromoManagement = () => {
                       <TableCell
                         key={label}
                         sx={{
-                          bgcolor: "#F8FAFC",
+                          bgcolor: "var(--sh-page-tint)",
 
-                          color: "#64748B",
+                          color: "#617B6C",
 
                           fontSize: 10.5,
 
@@ -1130,9 +1130,9 @@ const PromoManagement = () => {
                   <TableCell
                     align="right"
                     sx={{
-                      bgcolor: "#F8FAFC",
+                      bgcolor: "var(--sh-page-tint)",
 
-                      color: "#64748B",
+                      color: "#617B6C",
 
                       fontSize: 10.5,
 
@@ -1181,7 +1181,7 @@ const PromoManagement = () => {
                         <Box>
                           <Typography
                             sx={{
-                              color: "#0F172A",
+                              color: "#183D32",
 
                               fontSize: 13.5,
 
@@ -1203,7 +1203,7 @@ const PromoManagement = () => {
 
                               whiteSpace: "nowrap",
 
-                              color: "#94A3B8",
+                              color: "#839B8C",
 
                               fontSize: 11,
                             }}
@@ -1242,7 +1242,7 @@ const PromoManagement = () => {
                       <Box>
                         <Typography
                           sx={{
-                            color: "#475569",
+                            color: "#4C695A",
 
                             fontSize: 11.5,
 
@@ -1254,7 +1254,7 @@ const PromoManagement = () => {
 
                         <Typography
                           sx={{
-                            color: "#94A3B8",
+                            color: "#839B8C",
 
                             fontSize: 10,
                           }}
@@ -1426,7 +1426,7 @@ const PromoManagement = () => {
 
             py: "28px !important",
 
-            bgcolor: "#FAFCFB",
+            bgcolor: "var(--sh-page-tint)",
           }}
         >
           {/* BASIC INFO */}
@@ -1435,7 +1435,7 @@ const PromoManagement = () => {
             sx={{
               mb: 1.5,
 
-              color: "#94A3B8",
+              color: "#839B8C",
 
               fontSize: 10,
 
@@ -1526,13 +1526,13 @@ const PromoManagement = () => {
                     {formData.discount_type === "percentage" ? (
                       <PercentRounded
                         sx={{
-                          color: "#94A3B8",
+                          color: "#839B8C",
                         }}
                       />
                     ) : formData.discount_type === "fixed" ? (
                       <Typography
                         sx={{
-                          color: "#64748B",
+                          color: "#617B6C",
 
                           fontWeight: 800,
                         }}
@@ -1542,7 +1542,7 @@ const PromoManagement = () => {
                     ) : (
                       <LocalOfferRounded
                         sx={{
-                          color: "#94A3B8",
+                          color: "#839B8C",
                         }}
                       />
                     )}
@@ -1560,7 +1560,7 @@ const PromoManagement = () => {
             sx={{
               mb: 1.5,
 
-              color: "#94A3B8",
+              color: "#839B8C",
 
               fontSize: 10,
 
@@ -1629,7 +1629,7 @@ const PromoManagement = () => {
 
                     placeItems: "center",
 
-                    bgcolor: "#FFFFFF",
+                    bgcolor: "var(--sh-glass-bg)",
 
                     color: "#EA580C",
 
@@ -1660,7 +1660,7 @@ const PromoManagement = () => {
                     sx={{
                       mt: 0.35,
 
-                      color: "#0F172A",
+                      color: "#183D32",
 
                       fontSize: 15,
 
@@ -1693,7 +1693,7 @@ const PromoManagement = () => {
                       sx={{
                         mt: 0.5,
 
-                        color: "#64748B",
+                        color: "#617B6C",
 
                         fontSize: 11.5,
 
@@ -1730,14 +1730,14 @@ const PromoManagement = () => {
 
             py: 2.5,
 
-            borderTop: "1px solid #F1F5F9",
+            borderTop: "1px solid #EDF3E8",
           }}
         >
           <Button
             onClick={closeDialog}
             disabled={saving}
             sx={{
-              color: "#64748B",
+              color: "#617B6C",
 
               borderRadius: 3,
 
@@ -1844,7 +1844,7 @@ const PromoManagement = () => {
 
           <Typography
             sx={{
-              color: "#0F172A",
+              color: "#183D32",
 
               fontSize: 18,
 
@@ -1858,7 +1858,7 @@ const PromoManagement = () => {
             sx={{
               mt: 1,
 
-              color: "#64748B",
+              color: "#617B6C",
 
               fontSize: 13,
 
@@ -1882,7 +1882,7 @@ const PromoManagement = () => {
             disabled={deleting}
             onClick={closeDeleteDialog}
             sx={{
-              color: "#64748B",
+              color: "#617B6C",
 
               borderRadius: 3,
 

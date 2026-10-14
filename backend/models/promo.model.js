@@ -1,8 +1,27 @@
 const { db } = require('../config/db');
 
+const filterActivePromos = (promos = [], now = new Date()) => {
+  const current = new Date(now);
+
+  return promos.filter((promo) => {
+    if (!promo || promo.status !== 'active') return false;
+
+    const start = promo.start_date ? new Date(promo.start_date) : null;
+    const end = promo.end_date ? new Date(promo.end_date) : null;
+
+    if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return false;
+    }
+
+    return current >= start && current <= end;
+  });
+};
+
 const PromoModel = {
-  async getAll() {
-    return await db.promos.getAll();
+  async getAll(activeOnly = false) {
+    const promos = await db.promos.getAll();
+    const filtered = activeOnly ? filterActivePromos(promos) : promos;
+    return filtered.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   },
 
   async getById(id) {
@@ -11,7 +30,7 @@ const PromoModel = {
 
   async getActive() {
     const promos = await db.promos.find({ status: 'active' });
-    return promos.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+    return filterActivePromos(promos).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   },
 
   async create({ title, description, discount_type, discount_value, start_date, end_date, status, created_by }) {
@@ -43,4 +62,5 @@ const PromoModel = {
   }
 };
 
+PromoModel.filterActivePromos = filterActivePromos;
 module.exports = PromoModel;

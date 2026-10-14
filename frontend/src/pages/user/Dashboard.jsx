@@ -1,3 +1,4 @@
+import DashboardSkeleton from '../../components/DashboardSkeleton';
 import React, {
   useCallback,
   useEffect,
@@ -16,7 +17,6 @@ import {
   IconButton,
   Paper,
   Stack,
-  Snackbar,
   ThemeProvider,
   Tooltip,
   Typography,
@@ -46,11 +46,9 @@ import SearchFilterBar from '../../components/SearchFilterBar';
 import DealCountdown from '../../components/DealCountdown';
 import AnalyticsCharts from '../../components/AnalyticsCharts';
 import FloatingActionPanel from '../../components/FloatingActionPanel';
-import { useCart } from '../../contexts/CartContext';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const { addToCart, itemCount } = useCart();
   const { isDarkMode, toggle: toggleDarkMode } = useDarkMode();
   const {
     favorites,
@@ -68,7 +66,6 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [cartNotice, setCartNotice] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSettings, setFilterSettings] = useState({
     priceRange: [0, 10000],
@@ -297,16 +294,6 @@ const UserDashboard = () => {
     setFilterSettings(newFilters);
   };
 
-  const handleAddToCart = (product) => {
-    const result = addToCart(product);
-    if (!result.ok) {
-      setError(result.message);
-      return result;
-    }
-    setError('');
-    setCartNotice({ productName: product.name });
-    return result;
-  };
 
   const handleViewFavorites = () => {
     navigate('/client/favorites');
@@ -343,17 +330,11 @@ const UserDashboard = () => {
           gap: 1.5,
         }}
       >
-        <CircularProgress
-          size={44}
-          thickness={4}
-          sx={{
-            color: '#059669',
-          }}
-        />
+        <DashboardSkeleton />
 
         <Typography
           sx={{
-            color: '#64748B',
+            color: '#617B6C',
             fontSize: 13,
           }}
         >
@@ -504,7 +485,7 @@ const UserDashboard = () => {
               >
                 Browse available store products,
                 discover current offers and review
-                your purchase history.
+                your payment and billing receipts.
               </Typography>
 
               <Button
@@ -666,7 +647,7 @@ const UserDashboard = () => {
                           'uppercase',
                       }}
                     >
-                      Shopping Mode
+                      Client Portal
                     </Typography>
 
                     <Typography
@@ -675,7 +656,7 @@ const UserDashboard = () => {
                         fontWeight: 850,
                       }}
                     >
-                      Walk-in Store
+                      View Only Mode
                     </Typography>
                   </Box>
                 </Stack>
@@ -721,7 +702,7 @@ const UserDashboard = () => {
               subtitle: `${data.products.length} total listed`,
               icon: <Inventory2Outlined />,
               color: '#059669',
-              background: '#ECFDF5',
+              background: '#D8F3E5',
             },
 
             {
@@ -793,7 +774,7 @@ const UserDashboard = () => {
                       (theme) =>
                         theme.palette.mode === 'dark'
                           ? '0 16px 36px rgba(0, 168, 150, 0.12)'
-                          : '0 16px 36px rgba(15,23,42,.07)',
+                          : '0 16px 36px rgba(24,61,50,.07)',
                   },
                 }}
               >
@@ -892,7 +873,6 @@ const UserDashboard = () => {
         {featuredProducts.length > 0 && (
           <FeaturedCarousel
             products={featuredProducts}
-            onProductClick={handleAddToCart}
           />
         )}
 
@@ -1217,7 +1197,7 @@ const UserDashboard = () => {
 
                   placeItems: 'center',
 
-                  bgcolor: '#ECFDF5',
+                  bgcolor: '#D8F3E5',
 
                   color: '#059669',
 
@@ -1272,7 +1252,7 @@ const UserDashboard = () => {
                       sx={{
                         px: 1.2,
                         py: 0.6,
-                        bgcolor: '#ECFDF5',
+                        bgcolor: '#D8F3E5',
                         color: '#047857',
                         borderRadius: 2,
                         fontSize: '0.8rem',
@@ -1337,7 +1317,7 @@ const UserDashboard = () => {
 
                   placeItems: 'center',
 
-                  bgcolor: '#ECFDF5',
+                  bgcolor: '#D8F3E5',
 
                   color: '#059669',
 
@@ -1402,9 +1382,6 @@ const UserDashboard = () => {
                       onFavoriteToggle={
                         toggleFavorite
                       }
-                      onAddToCart={
-                        handleAddToCart
-                      }
                     />
                   </Grid>
                 )
@@ -1419,14 +1396,9 @@ const UserDashboard = () => {
 
         <FloatingActionPanel
           favoriteCount={favorites.length}
-          cartCount={itemCount}
-          onQuickOrder={() =>
-            navigate('/client/checkout')
-          }
           onViewFavorites={handleViewFavorites}
           onShare={handleShare}
           onToggleFilters={() => {
-            // Scroll to search bar
             const searchBar = document.querySelector(
               '[data-search-bar]'
             );
@@ -1435,39 +1407,6 @@ const UserDashboard = () => {
             }
           }}
         />
-
-        <Snackbar
-          open={Boolean(cartNotice)}
-          autoHideDuration={3200}
-          onClose={() => setCartNotice(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          sx={{ bottom: { xs: 92, sm: 32 } }}
-        >
-          <Alert
-            severity="success"
-            variant="filled"
-            onClose={() => setCartNotice(null)}
-            action={(
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() => navigate('/client/checkout')}
-                sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}
-              >
-                View cart
-              </Button>
-            )}
-            sx={{
-              width: '100%',
-              alignItems: 'center',
-              borderRadius: 2,
-              fontWeight: 700,
-              boxShadow: '0 12px 30px rgba(15, 23, 42, 0.28)',
-            }}
-          >
-            {cartNotice?.productName} added to cart
-          </Alert>
-        </Snackbar>
       </Box>
     </ThemeProvider>
   );

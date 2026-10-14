@@ -46,7 +46,7 @@ const ChangePassword = () => {
   })();
 
   const strengthLabels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong', 'Excellent'];
-  const strengthColors = ['#EF4444', '#F59E0B', '#EAB308', '#84CC16', '#22C55E', '#0D9488'];
+  const strengthColors = ['#EF4444', '#F59E0B', '#EAB308', '#84CC16', '#22C55E', '#087F5B'];
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -87,7 +87,7 @@ const ChangePassword = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#F8FAFC',
+        bgcolor: 'var(--sh-page-tint)',
         p: 2,
       }}
     >
@@ -98,8 +98,8 @@ const ChangePassword = () => {
           maxWidth: 440,
           p: { xs: 3, sm: 5 },
           borderRadius: 4,
-          border: '1px solid rgba(15,23,42,0.08)',
-          boxShadow: '0 8px 30px rgba(15,23,42,0.06)',
+          border: '1px solid rgba(24,61,50,0.08)',
+          boxShadow: '0 8px 30px rgba(24,61,50,0.06)',
         }}
       >
         <Box
@@ -109,18 +109,18 @@ const ChangePassword = () => {
             display: 'grid',
             placeItems: 'center',
             borderRadius: 3,
-            bgcolor: 'rgba(13,148,136,0.1)',
-            color: '#0D9488',
+            bgcolor: 'rgba(8,127,91,0.1)',
+            color: '#087F5B',
             mb: 2.5,
           }}
         >
           <LockResetIcon fontSize="large" />
         </Box>
 
-        <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', mb: 0.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: '#183D32', mb: 0.5 }}>
           Set Your New Password
         </Typography>
-        <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+        <Typography variant="body2" sx={{ color: '#617B6C', mb: 3 }}>
           Hi {user?.name || 'there'}! You're using a temporary password.
           Please create your own secure password to continue.
         </Typography>
@@ -177,7 +177,7 @@ const ChangePassword = () => {
                 sx={{
                   height: 6,
                   borderRadius: 3,
-                  bgcolor: 'rgba(15,23,42,0.06)',
+                  bgcolor: 'rgba(24,61,50,0.06)',
                   '& .MuiLinearProgress-bar': { bgcolor: strengthColors[strength], borderRadius: 3 },
                 }}
               />
@@ -218,8 +218,8 @@ const ChangePassword = () => {
               fontWeight: 700,
               textTransform: 'none',
               fontSize: '1rem',
-              bgcolor: '#0D9488',
-              '&:hover': { bgcolor: '#0F766E' },
+              bgcolor: '#087F5B',
+              '&:hover': { bgcolor: '#066649' },
             }}
           >
             {loading ? 'Saving...' : 'Save New Password'}
@@ -249,7 +249,7 @@ export const ChangePasswordSuccess = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#F8FAFC',
+        bgcolor: 'var(--sh-page-tint)',
         p: 2,
       }}
     >
@@ -261,15 +261,15 @@ export const ChangePasswordSuccess = () => {
           p: { xs: 4, sm: 6 },
           textAlign: 'center',
           borderRadius: 4,
-          border: '1px solid rgba(15,23,42,0.08)',
-          boxShadow: '0 8px 30px rgba(15,23,42,0.06)',
+          border: '1px solid rgba(24,61,50,0.08)',
+          boxShadow: '0 8px 30px rgba(24,61,50,0.06)',
         }}
       >
         <CheckCircleRounded sx={{ fontSize: 72, color: '#22C55E', mb: 2 }} />
-        <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: '#183D32', mb: 1 }}>
           Password Changed!
         </Typography>
-        <Typography variant="body2" sx={{ color: '#64748B', mb: 4 }}>
+        <Typography variant="body2" sx={{ color: '#617B6C', mb: 4 }}>
           Your new password is now active. Use it next time you sign in.
         </Typography>
         <Button
@@ -282,8 +282,8 @@ export const ChangePasswordSuccess = () => {
             fontWeight: 700,
             textTransform: 'none',
             fontSize: '1rem',
-            bgcolor: '#0D9488',
-            '&:hover': { bgcolor: '#0F766E' },
+            bgcolor: '#087F5B',
+            '&:hover': { bgcolor: '#066649' },
           }}
         >
           Continue to Dashboard

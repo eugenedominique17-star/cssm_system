@@ -1,8 +1,15 @@
 const { db } = require('../config/db');
+const supabase = require('../config/supabase');
 
 const ProductModel = {
   async getAll(activeOnly = false) {
     let products = await db.products.getAll();
+    const { data: availability, error } = await supabase.rpc('inventory_available_stock');
+    if (error && error.code !== 'PGRST202') throw error;
+    if (!error) {
+      const available = new Map(availability.map(row => [row.product_id, Number(row.available_stock || 0)]));
+      products = products.map(product => ({ ...product, physical_store_stock: product.stock, stock: available.get(product.id) || 0 }));
+    }
     if (activeOnly) {
       products = products.filter(p => p.status === 'active');
     }
@@ -15,8 +22,8 @@ const ProductModel = {
 
   async create({ name, description, price, stock, category, image_url, expiry_date, status, created_by }) {
     const product = await db.products.insert({
-      name, description, price: parseFloat(price), stock: parseInt(stock),
-      category, image_url: image_url || null, expiry_date: expiry_date || null,
+      name, description, price: parseFloat(price), stock: 0,
+      category, image_url: image_url || null, expiry_date: null,
       status: status || 'pending', created_by
     });
     return product.id;
@@ -32,22 +39,19 @@ const ProductModel = {
     if (image_url !== undefined) updates.image_url = image_url;
     if (expiry_date !== undefined) updates.expiry_date = expiry_date || null;
     if (status !== undefined) updates.status = status;
-    return await db.products.update(id, updates);
-  },
-
-  async updateStock(id, quantity) {
-    const product = await db.products.findById(id);
-    if (product) {
-      await db.products.update(id, { stock: product.stock + quantity });
-    }
+    const result = await db.products.update(id, updates);
+    if (!result) throw Object.assign(new Error('Product update failed. Use Inventory for stock changes.'), { status: 409 });
+    return result;
   },
 
   async delete(id) {
-    return await db.products.delete(id);
+    const deleted = await db.products.delete(id);
+    if (!deleted) throw Object.assign(new Error('Products with inventory history cannot be deleted. Mark the product inactive instead.'), { status: 409 });
+    return deleted;
   },
 
   async getLowStock(threshold = 10) {
-    const products = await db.products.find({ status: 'active' });
+    const products = await this.getAll(true);
     return products.filter(p => p.stock <= threshold);
   },
 
