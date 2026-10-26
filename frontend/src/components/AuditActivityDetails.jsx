@@ -24,7 +24,6 @@ export default function AuditActivityDetails({ entry }) {
   return <Stack spacing={2}>
     <Alert severity={view.severity}>{view.message}</Alert>
     {fields.length > 0 && <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>{fields.map(([label, value]) => <Box key={label}><Typography variant="caption" color="text.secondary">{label}</Typography><Typography sx={{ overflowWrap: 'anywhere' }}>{auditValue(value)}</Typography></Box>)}</Box>}
-    {entry.action === 'Change password' && entry.outcome === 'succeeded' && <Box><Typography variant="caption" color="text.secondary">Previous password</Typography><Typography>{details.previous_password?.masked || 'Unavailable'}</Typography><Typography variant="caption" color="text.secondary">Reveal this from User Management for the affected account.</Typography></Box>}
     {order && <Box>
       <Typography fontWeight={700} sx={{ mb: 1 }}>Saved order record</Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}>

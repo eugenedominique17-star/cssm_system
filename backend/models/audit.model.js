@@ -1,7 +1,6 @@
 const supabase = require('../config/supabase');
 const TransactionModel = require('./transaction.model');
 const { attachInventoryContext, attachOrderContext } = require('../utils/audit-context');
-const Secret = require('./audit-secret.model');
 
 module.exports = {
   async start(entry) {
@@ -30,11 +29,6 @@ module.exports = {
     if (error) throw error;
     const ids=[...new Set(data.filter(entry=>entry.outcome==='succeeded' && entry.entity_type==='Inventory' && entry.action.startsWith('Inventory ') && entry.details?.snapshot_version!==1 && /^[0-9a-f-]{36}$/i.test(entry.entity_id || '')).map(entry=>entry.entity_id))];
     let entries=data;
-    const passwordIds = data.filter(entry => entry.outcome === 'succeeded' && entry.action === 'Change password').map(entry => entry.id);
-    if (passwordIds.length) {
-      const metadata = await Secret.metadata(passwordIds);
-      entries = entries.map(entry => metadata.has(entry.id) ? { ...entry, details: { ...entry.details, previous_password: metadata.get(entry.id) } } : entry);
-    }
     if(ids.length) {
       const linked=await supabase.from('inventory_documents').select('id,actor_id,actor_name,actor_role,status,reviewed_by,reason,inventory_document_items(product_id,quantity,expiry_date,products(name))').in('id',ids);
       // Older entries remain readable when their optional linked record is unavailable.
