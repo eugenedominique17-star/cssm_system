@@ -64,7 +64,7 @@ export default function AuditLogs() {
                 <TableCell>{auditTitle(entry)}</TableCell>
                 <TableCell><Chip size="small" color={outcomeColor[entry.outcome]} label={outcomeLabel[entry.outcome]} /></TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>{timestamp(entry.created_at)}</TableCell>
-                <TableCell><Button size="small" onClick={() => { setRevealedPassword(''); setSelected(entry); }} aria-label={`View ${auditTitle(entry)} by ${entry.actor_name}`}>View</Button></TableCell>
+                <TableCell><Button size="small" onClick={() => setSelected(entry)} aria-label={`View ${auditTitle(entry)} by ${entry.actor_name}`}>View</Button></TableCell>
               </TableRow>)}
               {!data.entries.length && <TableRow><TableCell colSpan={6} sx={{ textAlign: 'center', py: 7 }}><HistoryRounded sx={{ fontSize: 44, color: '#087F5B', mb: 1 }} /><Typography fontWeight={700}>No activity found</Typography><Typography variant="body2" color="text.secondary">New activity appears here after audit logging is enabled. Try clearing your filters.</Typography></TableCell></TableRow>}
             </TableBody>
