@@ -20,9 +20,9 @@ import {
 import {
   AssignmentRounded,
   BarChartRounded,
+  BadgeRounded,
   CloseRounded,
   DashboardRounded,
-  FavoriteBorderRounded,
   HistoryRounded,
   Inventory2Rounded,
   LogoutRounded,
@@ -47,14 +47,15 @@ const roleLabels = {
 
 const navByRole = {
   admin: [
-    { label: 'Inventory', href: '/admin/inventory', icon: Inventory2Rounded },
-    { label: 'Audit Log', href: '/admin/audit-logs', icon: HistoryRounded },
     { label: 'Dashboard', href: '/admin/dashboard', icon: DashboardRounded },
-    { label: 'Accounts', href: '/admin/accounts', icon: PeopleAltRounded },
+    { label: 'Inventory', href: '/admin/inventory', icon: Inventory2Rounded },
+    { label: 'Clients', href: '/admin/accounts/clients', icon: PeopleAltRounded },
+    { label: 'Staff', href: '/admin/accounts/staff', icon: BadgeRounded },
     { label: 'Staff Approvals', href: '/admin/approvals/staff', icon: VerifiedRounded },
     { label: 'Client Approvals', href: '/admin/approvals/clients', icon: PeopleAltRounded },
     { label: 'Submissions', href: '/admin/approvals/submissions', icon: AssignmentRounded },
     { label: 'Reports', href: '/admin/reports', icon: BarChartRounded },
+    { label: 'Audit Log', href: '/admin/audit-logs', icon: HistoryRounded },
     { label: 'Product Monitor', href: '/admin/product-monitor', icon: Inventory2Rounded },
   ],
   staff: [
@@ -70,7 +71,6 @@ const navByRole = {
   client: [
     { label: 'Dashboard', href: '/client/dashboard', icon: DashboardRounded },
     { label: 'Purchase History', href: '/client/history', icon: HistoryRounded },
-    { label: 'Favorites', href: '/client/favorites', icon: FavoriteBorderRounded },
     { label: 'Profile', href: '/client/profile', icon: PersonRounded },
   ],
 };

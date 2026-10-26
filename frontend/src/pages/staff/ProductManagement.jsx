@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress, Alert, Chip, IconButton, Stack } from '@mui/material';
 import { Add, Edit, Delete, Inventory, Search } from '@mui/icons-material';
-import API from '../../api/axios';
+import API from '../../api/catalogMutations';
+import { getCatalog } from '../../api/catalog';
 import { colors } from '../../theme';
 
 const ProductManagement = () => {
@@ -18,7 +19,7 @@ const ProductManagement = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await API.get('/products');
+      const response = await getCatalog('products');
       setProducts(response.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);

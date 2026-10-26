@@ -3,6 +3,7 @@ const ProductModel = require('../models/product.model');
 const PromoModel = require('../models/promo.model');
 const TransactionModel = require('../models/transaction.model');
 const SubmissionModel = require('../models/submission.model');
+const { accountStatusDetails, submissionReviewDetails } = require('../utils/audit');
 
 const isValidReportDate = (value) => {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -61,7 +62,11 @@ exports.approveStaff = async (req, res) => {
     if (!['active', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status. Must be "active" or "rejected".' });
     }
-    await UserModel.updateStatus(req.params.id, status);
+    const user = await UserModel.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    const updated = await UserModel.updateStatus(req.params.id, status);
+    if (!updated) return res.status(404).json({ message: 'User not found.' });
+    req.accountAuditDetails = accountStatusDetails(user, updated);
     res.json({ message: `Staff account ${status === 'active' ? 'approved' : 'rejected'} successfully.` });
   } catch (error) {
     console.error('Approve staff error:', error);
@@ -99,68 +104,53 @@ exports.approveSubmission = async (req, res) => {
     const submission = await SubmissionModel.getById(req.params.id);
     if (!submission) return res.status(404).json({ message: 'Submission not found.' });
 
-    if (status === 'approved') {
-      const data = submission.data;
-      if ((submission.type === 'stock_update' && data.stock !== undefined) || (submission.type === 'product' && Number(data.stock || 0) !== 0)) {
-        return res.status(409).json({ message: 'This legacy stock request cannot be approved. Reject it and use Bodega Inventory receiving or transfer instead.' });
-      }
-      switch (submission.type) {
-        case 'product':
-          await ProductModel.create({
-            name: data.name,
-            description: data.description,
-            price: data.price,
-            stock: data.stock,
-            category: data.category,
-            image_url: data.image_url,
-            expiry_date: data.expiry_date,
-            status: 'active',
-            created_by: submission.submitted_by
+    if (submission.status !== 'pending') return res.status(409).json({ message: 'This submission has already been reviewed.' });
+    if (admin_notes != null && (typeof admin_notes !== 'string' || admin_notes.length > 2000)) {
+      return res.status(400).json({ message: 'Review notes must be at most 2000 characters.' });
+    }
+    let credentials;
+    let passwordHash = null;
+    let passwordResetTarget = null;
+    if (status === 'approved' && submission.type === 'password_reset') {
+      const target = await UserModel.findByIdWithPassword(submission.data.target_user_id);
+      if (!target || target.role === 'admin') return res.status(400).json({ message: 'Invalid password reset target.' });
+      passwordResetTarget = target;
+      const password = require('../utils/password').generateTempPassword();
+      passwordHash = await require('bcryptjs').hash(password, 10);
+      credentials = { user_id: target.user_id, email: target.email, password };
+    }
+    const result = await SubmissionModel.reviewAtomic(req.params.id, status, admin_notes, req.user.id, passwordHash);
+    req.submissionAuditDetails = submissionReviewDetails(result.before, result.after);
+    res.setHeader('Cache-Control', 'no-store');
+    if (credentials && passwordResetTarget?.auth_user_id) {
+      try {
+        await require('../utils/supabase-auth-password').updateSupabasePassword(
+          passwordResetTarget.auth_user_id,
+          credentials.password,
+        );
+      } catch (error) {
+        const restored = await UserModel.updatePassword(
+          passwordResetTarget.id,
+          passwordResetTarget.password,
+          Boolean(passwordResetTarget.must_change_password),
+        );
+        if (!restored) {
+          console.error('Password reset rollback failed after Supabase Auth update error:', error.code || 'unavailable');
+          return res.status(503).json({
+            message: 'Submission review completed, but password synchronization failed and the prior password could not be restored. Reset the account through Account Management immediately.',
           });
-          break;
-        case 'promo':
-          await PromoModel.create({
-            title: data.title,
-            description: data.description,
-            discount_type: data.discount_type,
-            discount_value: data.discount_value,
-            start_date: data.start_date,
-            end_date: data.end_date,
-            status: 'active',
-            created_by: submission.submitted_by
-          });
-          break;
-        case 'stock_update':
-          if (data.product_id) {
-            await ProductModel.update(data.product_id, {
-              name: data.name,
-              description: data.description,
-              price: data.price,
-              category: data.category,
-              image_url: data.image_url,
-            });
-          }
-          break;
-        // Additive: staff-requested password reset — apply simple pattern temp password
-        case 'password_reset': {
-          const bcrypt = require('bcryptjs');
-          const target = await UserModel.findByIdWithPassword(data.target_user_id);
-          if (target) {
-            const tempPassword = `${String(target.role || 'client').toLowerCase()}123`;
-            const saltRounds = await bcrypt.genSalt(10);
-            const hashed = await bcrypt.hash(tempPassword, saltRounds);
-            await UserModel.updatePassword(target.id, hashed, true);
-          }
-          break;
         }
+        console.error('Supabase Auth password reset failed; previous account password was restored:', error.code || 'unavailable');
+        return res.status(503).json({
+          message: 'Submission review completed, but Supabase Auth password reset failed. The prior account password was restored; issue a new reset through Account Management.',
+        });
       }
     }
-
-    await SubmissionModel.updateStatus(req.params.id, status, admin_notes);
-    res.json({ message: `Submission ${status === 'approved' ? 'approved' : 'rejected'} successfully.` });
+    res.json({ message: 'Submission ' + status + ' successfully.', ...(credentials ? { credentials } : {}) });
   } catch (error) {
-    console.error('Approve submission error:', error);
-    res.status(500).json({ message: 'Server error.' });
+    console.error('Approve submission error:', error.code || 'unavailable');
+    const status = error.status || 500;
+    res.status(status).json({ message: status < 500 ? error.message : 'Submission review could not be saved. Check its status before retrying.' });
   }
 };
 

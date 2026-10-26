@@ -4,10 +4,8 @@ import {
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,
-  Badge,
 } from "@mui/material";
 import {
-  FavoriteBorderRounded,
   ShareRounded,
   TuneRounded,
   HomeRounded,
@@ -18,8 +16,6 @@ import {
  * Cart removed — clients are view-only.
  */
 const FloatingActionPanel = ({
-  favoriteCount = 0,
-  onViewFavorites,
   onShare,
   onToggleFilters,
 }) => {
@@ -27,15 +23,6 @@ const FloatingActionPanel = ({
 
   // Configuration object for SpeedDial actions
   const actions = [
-    {
-      icon: (
-        <Badge badgeContent={favoriteCount} color="error" max={99}>
-          <FavoriteBorderRounded />
-        </Badge>
-      ),
-      name: `Favorites (${favoriteCount})`,
-      action: onViewFavorites,
-    },
     {
       icon: <ShareRounded />,
       name: "Share",

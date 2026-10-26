@@ -20,4 +20,31 @@ function attachInventoryContext(entries, documents) {
     return { ...entry, details: { ...entry.details, linked_request: linked } };
   });
 }
-module.exports = { attachInventoryContext };
+
+function attachOrderContext(entries, orders) {
+  const byId = new Map(orders.filter(Boolean).map(order => [String(order.id), order]));
+  return entries.map(entry => {
+    if (entry.outcome !== 'succeeded' || entry.entity_type !== 'Order' || entry.action !== 'Create order' ||
+        !/^\d+$/.test(entry.entity_id || '') || entry.details?.linked_order) return entry;
+    const order = byId.get(String(entry.entity_id));
+    if (!order) return entry;
+    const linkedOrder = {
+      receipt_number: order.receipt_number,
+      customer_name: order.user_name,
+      total_amount: order.total_amount,
+      payment_method: order.payment_method,
+      tendered_amount: order.tendered_amount,
+      change_amount: order.change_amount,
+      items: (order.items || []).map(item => ({
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.subtotal,
+      })),
+    };
+    return { ...entry, details: { ...entry.details, linked_order: linkedOrder } };
+  });
+}
+
+module.exports = { attachInventoryContext, attachOrderContext };

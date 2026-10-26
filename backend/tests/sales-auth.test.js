@@ -207,12 +207,15 @@ test('completion returns exact cent change', async () => {
   assert.equal(res.body.change, 0.1);
 });
 
-test('invalid and expired tokens never reach account lookup', async () => {
+test('invalid and expired tokens never reach legacy account lookup', async () => {
   const oldSecret = process.env.JWT_SECRET;
   process.env.JWT_SECRET = 'regression-test-only-secret';
   try {
     const { authenticate } = load('middleware/auth.js', {
-      '../models/user.model': { findById: async () => assert.fail('Invalid token must not query accounts') },
+      '../models/user.model': {
+        findById: async () => assert.fail('Invalid token must not query legacy accounts'),
+        findBySupabaseToken: async () => null,
+      },
       dotenv: { config() {} },
     });
     const expired = jwt.sign({ id: 1, role: 'staff' }, process.env.JWT_SECRET, { expiresIn: -1 });

@@ -137,7 +137,7 @@ controller.create = async (req, res) => {
       items: transactionItems,
     });
 
-    sendToUser(user_id, "order_status_update", {
+    await sendToUser(user_id, "order_status_update", {
       status: "completed",
       receipt_number,
       total_amount,
@@ -367,7 +367,7 @@ controller.completeWalkInRequest = async (req, res) => {
     });
 
     // Notify the client in real-time that their order has been completed
-    sendToUser(submission.submitted_by, "order_status_update", {
+    await sendToUser(submission.submitted_by, "order_status_update", {
       submissionId: Number(req.params.id),
       status: "approved",
       receipt_number: receipt,
@@ -428,7 +428,7 @@ controller.cancelWalkInRequest = async (req, res) => {
     if (!cancelled) return res.status(409).json({ message: "This order can no longer be cancelled." });
 
     // Notify the client in real-time that their order has been cancelled
-    sendToUser(submission.submitted_by, "order_status_update", {
+    await sendToUser(submission.submitted_by, "order_status_update", {
       submissionId: Number(req.params.id),
       status: "cancelled",
       message: isClient

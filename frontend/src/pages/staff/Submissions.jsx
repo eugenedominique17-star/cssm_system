@@ -34,7 +34,7 @@ import {
   UpdateRounded,
 } from "@mui/icons-material";
 
-import API from "../../api/axios";
+import { getMySubmissions } from "../../api/submissions";
 
 const StaffSubmissions = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -52,7 +52,7 @@ const StaffSubmissions = () => {
 
       setError("");
 
-      const response = await API.get("/admin/my-submissions");
+      const response = await getMySubmissions();
 
       let user = null;
 

@@ -54,7 +54,8 @@ import {
   WarningAmberRounded,
 } from "@mui/icons-material";
 
-import API from "../../api/axios";
+import API from "../../api/catalogMutations";
+import { getCatalog } from "../../api/catalog";
 
 const INITIAL_FORM = {
   title: "",
@@ -128,7 +129,7 @@ const PromoManagement = () => {
           setLoading(true);
         }
 
-        const response = await API.get("/promos");
+        const response = await getCatalog("promos");
 
         setPromos(Array.isArray(response.data) ? response.data : []);
       } catch (error) {

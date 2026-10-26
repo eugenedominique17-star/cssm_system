@@ -57,7 +57,15 @@ import {
   WarningAmberRounded,
 } from "@mui/icons-material";
 
-import API from "../../api/axios";
+import API from "../../api/accountAdmin";
+import { getCatalog } from "../../api/catalog";
+import {
+  completeWalkInSale,
+  createSale,
+  getPendingWalkInRequests,
+  getTransactionDetail,
+  getTransactions,
+} from "../../api/sales";
 
 const INITIAL_FORM = {
   user_id: "",
@@ -143,10 +151,10 @@ const ReceiptManagement = () => {
 
         const [transactionsResponse, productsResponse, usersResponse, walkInResponse] =
           await Promise.all([
-            API.get("/transactions"),
-            API.get("/products?active=true"),
+            getTransactions(),
+            getCatalog("products", { active: true }),
             API.get("/users?role=client"),
-            API.get("/transactions/walk-in-requests/pending"),
+            getPendingWalkInRequests(),
           ]);
 
         setTransactions(
@@ -466,11 +474,11 @@ const ReceiptManagement = () => {
       payload.request_id = checkoutRequest.current.id;
 
       const response = walkInRequestId
-        ? await API.post(`/transactions/walk-in-requests/${walkInRequestId}/complete`, {
+        ? await completeWalkInSale(walkInRequestId, {
             payment_method: selectedPaymentMethod,
             tendered_amount: Number(tenderedAmount),
           })
-        : await API.post("/transactions", payload);
+        : await createSale(payload);
 
       showAlert(
         response?.data?.receipt_number
@@ -508,7 +516,7 @@ const ReceiptManagement = () => {
     setSelectedTransaction(null);
 
     try {
-      const response = await API.get(`/transactions/${id}`);
+      const response = await getTransactionDetail(id);
 
       setSelectedTransaction(response.data);
     } catch (error) {

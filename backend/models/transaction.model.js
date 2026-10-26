@@ -101,6 +101,41 @@ const TransactionModel = {
     };
   },
 
+  async getAuditDetails(ids) {
+    if (!ids.length) return [];
+    const [transactionsResult, itemsResult] = await Promise.all([
+      supabase.from('transactions').select('id,receipt_number,user_id,total_amount,payment_method,tendered_amount,change_amount').in('id', ids),
+      supabase.from('transaction_items').select('transaction_id,product_id,quantity,unit_price,subtotal').in('transaction_id', ids),
+    ]);
+    if (transactionsResult.error) throw transactionsResult.error;
+    if (itemsResult.error) throw itemsResult.error;
+
+    const transactions = transactionsResult.data || [];
+    const items = itemsResult.data || [];
+    const customerIds = [...new Set(transactions.map(transaction => transaction.user_id).filter(Boolean))];
+    const productIds = [...new Set(items.map(item => item.product_id))];
+    const [customersResult, productsResult] = await Promise.all([
+      customerIds.length ? supabase.from('clients').select('id,name').in('id', customerIds) : { data: [], error: null },
+      productIds.length ? supabase.from('products').select('id,name').in('id', productIds) : { data: [], error: null },
+    ]);
+    if (customersResult.error) throw customersResult.error;
+    if (productsResult.error) throw productsResult.error;
+
+    const customerNames = new Map((customersResult.data || []).map(customer => [customer.id, customer.name]));
+    const productNames = new Map((productsResult.data || []).map(product => [product.id, product.name]));
+    const itemsByTransaction = new Map();
+    for (const item of items) {
+      const grouped = itemsByTransaction.get(item.transaction_id) || [];
+      grouped.push({ ...item, product_name: productNames.get(item.product_id) || 'Unknown' });
+      itemsByTransaction.set(item.transaction_id, grouped);
+    }
+    return transactions.map(transaction => ({
+      ...transaction,
+      user_name: customerNames.get(transaction.user_id) || null,
+      items: itemsByTransaction.get(transaction.id) || [],
+    }));
+  },
+
   async getByUserId(userId) {
     const transactions = await db.transactions.find({ user_id: userId });
     const sortedTransactions = transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

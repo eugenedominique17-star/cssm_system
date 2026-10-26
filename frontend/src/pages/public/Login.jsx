@@ -1162,7 +1162,7 @@ const Login = () => {
                 FORM
             ================================================= */}
 
-            <Box component="form" onSubmit={handleSubmit} noValidate>
+            <Box component="form" onSubmit={handleSubmit} autoComplete="off" noValidate>
               <Stack spacing={1.9}>
                 {/* ACCOUNT */}
 
@@ -1190,9 +1190,9 @@ const Login = () => {
                     fullWidth
                     autoFocus
                     disabled={loading}
-                    autoComplete="username"
+                    autoComplete="off"
                     value={identifier}
-                    placeholder="ADM-0001 or name@email.com"
+                    placeholder="Enter your Account ID or Email"
                     onChange={(event) => {
                       setIdentifier(event.target.value);
 
@@ -1241,7 +1241,7 @@ const Login = () => {
                     id="login-password"
                     fullWidth
                     disabled={loading}
-                    autoComplete="current-password"
+                    autoComplete="off"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     placeholder="Enter your password"

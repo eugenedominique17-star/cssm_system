@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Alert,
   Box,
@@ -28,7 +28,7 @@ import {
   Description,
   SecurityRounded,
 } from "@mui/icons-material";
-import API from "../../api/axios";
+import { getPendingSubmissions, reviewSubmission } from "../../api/submissions";
 import { colors } from "../../theme";
 
 const SubmissionApprovals = () => {
@@ -42,14 +42,16 @@ const SubmissionApprovals = () => {
   const [viewDialog, setViewDialog] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [adminNotes, setAdminNotes] = useState("");
+  const alertTimer = useRef(null);
 
   useEffect(() => {
     fetchSubmissions();
+    return () => clearTimeout(alertTimer.current);
   }, []);
 
   const fetchSubmissions = async () => {
     try {
-      const response = await API.get("/admin/pending-submissions");
+      const response = await getPendingSubmissions();
       setSubmissions(response.data);
     } catch (error) {
       console.error("Failed to fetch submissions:", error);
@@ -60,36 +62,37 @@ const SubmissionApprovals = () => {
 
   const handleApprove = async (id) => {
     try {
-      await API.put(`/admin/approve-submission/${id}`, {
-        status: "approved",
-        admin_notes: adminNotes,
-      });
-      showAlert("Submission approved!");
+      const response = await reviewSubmission(id, "approved", adminNotes);
+      if (response.data.credentials) {
+        clearTimeout(alertTimer.current);
+        const { user_id, password } = response.data.credentials;
+        setAlert({ show: true, severity: 'success', message: `Password reset approved. Account: ${user_id}. Temporary password: ${password}. Copy and securely give this to the account owner before leaving this page.` });
+      } else {
+        showAlert("Submission approved!");
+      }
       setViewDialog(false);
       setAdminNotes("");
       fetchSubmissions();
     } catch (error) {
-      showAlert("Failed to approve submission.", "error");
+      showAlert(error.response?.data?.message || "Failed to approve submission.", "error");
     }
   };
 
   const handleReject = async (id) => {
     const notes = prompt("Enter rejection reason (optional):");
     try {
-      await API.put(`/admin/approve-submission/${id}`, {
-        status: "rejected",
-        admin_notes: notes || "",
-      });
+      await reviewSubmission(id, "rejected", notes || "");
       showAlert("Submission rejected.");
       fetchSubmissions();
     } catch (error) {
-      showAlert("Failed to reject submission.", "error");
+      showAlert(error.response?.data?.message || "Failed to reject submission.", "error");
     }
   };
 
   const showAlert = (message, severity = "success") => {
+    clearTimeout(alertTimer.current);
     setAlert({ show: true, message, severity });
-    setTimeout(
+    alertTimer.current = setTimeout(
       () => setAlert({ show: false, message: "", severity: "success" }),
       3000,
     );

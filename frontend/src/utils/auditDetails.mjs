@@ -7,6 +7,7 @@ const labels = {
   'Inventory create_product': 'Product Created',
   'Inventory edit_product': 'Product Details Updated',
   'Edit batch expiry': 'Expiration Date Updated',
+  'Create order': 'Order Created',
 };
 export function auditTitle(entry) {
   const staffRequest = entry.action === 'Inventory restock' && entry.actor_role === 'staff' && (entry.details?.snapshot_version === 1 || entry.details?.linked_request?.requires_approval === true);
@@ -18,6 +19,20 @@ export function auditPresentation(entry) {
   if (entry.outcome === 'failed') return { severity: 'error', message: 'This action failed. No successful change is confirmed by this activity.' };
   if (entry.outcome === 'pending') return { severity: 'warning', message: 'The final result was not recorded. Do not assume the action failed or repeat it without checking its status.' };
   if (details.snapshot_version === 1) return { severity: details.replayed ? 'info' : 'success', message: details.result, changes: details.changes || [] };
+  if (['Approve submission', 'Reject submission'].includes(entry.action)) return {
+    severity: 'success',
+    message: `${entry.action === 'Reject submission' ? 'Submission rejected. The requested changes were not applied.' : 'Submission approved successfully.'} This older activity did not save the submission's Before / After details.`,
+  };
+  if (['Approve account', 'Reject account'].includes(entry.action)) return {
+    severity: 'success',
+    message: `${entry.action === 'Approve account' ? 'Account approved' : 'Account rejected'} successfully. This older activity did not save the account's Before / After status.`,
+  };
+  if (entry.entity_type === 'Order' && entry.action === 'Create order') {
+    return {
+      severity: details.linked_order ? 'success' : 'warning',
+      message: details.linked_order ? 'Order created. The saved transaction record is shown below.' : 'Order created, but its saved transaction record could not be loaded.',
+    };
+  }
   if (entry.action === 'Edit batch expiry') return { severity: 'success', message: 'The expiration change was recorded with the database update.', changes: [{ field: 'expiry_date', label: 'Expiration date', before: details.old_expiry_date, after: details.new_expiry_date }] };
   if (entry.action === 'Inventory approve_restock') return { severity: 'success', message: 'Stock request approved. Historical Before / After values were not recorded for this activity.' };
   if (entry.action === 'Inventory reject_restock') return { severity: 'info', message: 'Stock request rejected. Available stock was not changed by this action.' };

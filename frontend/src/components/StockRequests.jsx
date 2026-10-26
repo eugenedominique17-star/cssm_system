@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
-import API from '../api/axios';
+import API from '../api/inventory';
 
 const statuses = { pending: 'Pending', completed: 'Approved', rejected: 'Rejected' };
 const colors = { pending: 'warning', completed: 'success', rejected: 'error' };

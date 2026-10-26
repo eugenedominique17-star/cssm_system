@@ -1,4 +1,5 @@
 const { db } = require('../config/db');
+const supabase = require('../config/supabase');
 
 // Map a role to its physical table (TRUE separation of clients / staff / admins)
 const TABLE_BY_ROLE = { client: 'clients', staff: 'staff', admin: 'admins' };
@@ -37,6 +38,37 @@ const UserModel = {
     if (st) return withRole(st, 'staff');
     if (ad) return withRole(ad, 'admin');
     return null;
+  },
+
+  async findByAuthUserId(authUserId) {
+    const matches = await Promise.all(
+      Object.entries(TABLE_BY_ROLE).map(async ([role, table]) => {
+        const { data, error } = await supabase
+          .from(table)
+          .select('*')
+          .eq('auth_user_id', authUserId)
+          .maybeSingle();
+        if (error) throw error;
+        return data ? withRole(data, role) : null;
+      })
+    );
+    const users = matches.filter(Boolean);
+    if (users.length > 1) throw new Error('Supabase Auth identity is linked to multiple application accounts.');
+    if (!users.length) return null;
+    const { password, ...profile } = users[0];
+    return profile;
+  },
+
+  async findBySupabaseToken(token) {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error) {
+      if (error.status === 401) return null;
+      throw Object.assign(new Error('Unable to verify Supabase Auth session.'), { status: 503 });
+    }
+    if (!data.user) return null;
+    const user = await this.findByAuthUserId(data.user.id);
+    if (!user || user.email.toLowerCase() !== String(data.user.email || '').toLowerCase()) return null;
+    return user;
   },
 
   // identifier may be an email OR a formatted user_id (C100001 / S100001 / A100001)

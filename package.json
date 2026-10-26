@@ -9,6 +9,11 @@
     "concurrently": "^10.0.5"
   },
   "scripts": {
+    "postinstall": "npm ci --prefix backend && npm ci --prefix frontend",
+    "start": "node backend/server.js",
+    "build": "npm --prefix frontend run build",
+    "build:low-memory": "node --max-old-space-size=768 --max-semi-space-size=8 frontend/scripts/build-low-memory.cjs",
     "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\""
-  }
+  },
+  "engines": { "node": ">=22 <25" }
 }

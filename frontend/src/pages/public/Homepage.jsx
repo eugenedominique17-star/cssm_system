@@ -31,10 +31,12 @@ import {
   FilterAltOffRounded,
   Inventory2Outlined,
   KeyboardArrowUpRounded,
+  LocalAtmRounded,
   LocalOfferRounded,
   LocationOnRounded,
   LoginRounded,
   PhoneRounded,
+  ReceiptLongRounded,
   RefreshRounded,
   SearchRounded,
   ShoppingBagOutlined,
@@ -44,7 +46,7 @@ import {
   VerifiedRounded,
 } from "@mui/icons-material";
 
-import API from "../../api/axios";
+import { getCatalog } from "../../api/catalog";
 import Navbar from "../../components/Navbar";
 
 const STORE = {
@@ -80,8 +82,7 @@ const Homepage = () => {
     setError("");
 
     try {
-      // Existing backend API kept unchanged.
-      const response = await API.get("/public/homepage");
+      const response = await getCatalog("homepage");
 
       setData({
         products: response.data?.products || [],
@@ -1097,9 +1098,9 @@ const Homepage = () => {
 
           <Grid container spacing={2.2} sx={{ mt: 2 }}>
             {[
-              [<Inventory2Outlined />, "Updated availability", "See the products currently listed by your local store."],
-              [<LocalOfferRounded />, "Current promotions", "Find active StoreHub deals in one convenient place."],
-              [<SupportAgentRounded />, "Local support", "Call or email the store when you need help with an item."],
+              [<ShoppingBagOutlined />, "In-Store Shopping", "Customers can visit our store and purchase everyday essentials, snacks, beverages, and household products."],
+              [<LocalAtmRounded />, "Cash Payment", "Customers can conveniently pay for their purchases directly at the cashier."],
+              [<ReceiptLongRounded />, "Receipt Issuance", "Customers receive a receipt as proof of their completed purchases."],
             ].map(([icon, title, text], index) => (
               <Grid item xs={12} md={4} key={title}>
                 <MotionPaper
@@ -1120,6 +1121,49 @@ const Homepage = () => {
                 </MotionPaper>
               </Grid>
             ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* ABOUT THE SYSTEM */}
+      <Box id="about-section" sx={{ scrollMarginTop: 90, py: { xs: 6, md: 8 }, bgcolor: "var(--sh-glass-bg)" }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12} md={7}>
+              <Typography sx={{ color: "#087F5B", fontSize: ".7rem", fontWeight: 900, letterSpacing: ".12em" }}>
+                ABOUT THE SYSTEM
+              </Typography>
+              <Typography sx={{ mt: .7, fontSize: { xs: "1.7rem", md: "2.05rem" }, fontWeight: 950 }}>
+                Built for faster, more organized walk-in service
+              </Typography>
+              <Typography sx={{ mt: 1.2, maxWidth: 680, color: "#7A8B87", fontSize: ".82rem", lineHeight: 1.8 }}>
+                StoreHub is a convenience store management system designed for walk-in purchases. It helps the store team manage products, monitor inventory, apply promotions, and record sales transactions in one organized platform.
+              </Typography>
+              <Typography sx={{ mt: 1, maxWidth: 680, color: "#7A8B87", fontSize: ".82rem", lineHeight: 1.8 }}>
+                With accurate stock information, clear transaction records, and receipt issuance at the cashier, the system supports faster checkout and better service for every customer who visits the store.
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={5}>
+              <Paper elevation={0} sx={{ p: 2.5, borderRadius: "22px", border: "1px solid #E3ECEA", bgcolor: "var(--sh-page-tint)" }}>
+                <Stack spacing={1.5}>
+                  {[
+                    [<Inventory2Outlined />, "Inventory monitoring", "Keep product availability and stock levels organized."],
+                    [<ReceiptLongRounded />, "Walk-in sales records", "Record cashier transactions and issue customer receipts."],
+                    [<VerifiedRounded />, "Reliable store operations", "Support accurate, efficient, and consistent service."],
+                  ].map(([icon, title, text]) => (
+                    <Stack key={title} direction="row" spacing={1.3} alignItems="flex-start">
+                      <Box sx={{ width: 38, height: 38, flexShrink: 0, display: "grid", placeItems: "center", borderRadius: "12px", bgcolor: "#ECFBF8", color: "#087F5B" }}>
+                        {icon}
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontSize: ".78rem", fontWeight: 950 }}>{title}</Typography>
+                        <Typography sx={{ mt: .2, color: "#7A8B87", fontSize: ".7rem", lineHeight: 1.55 }}>{text}</Typography>
+                      </Box>
+                    </Stack>
+                  ))}
+                </Stack>
+              </Paper>
+            </Grid>
           </Grid>
         </Container>
       </Box>
@@ -1285,6 +1329,7 @@ const Homepage = () => {
                   ["Products", "products-section"],
                   ["Promotions", "promos-section"],
                   ["Services", "services-section"],
+                  ["About", "about-section"],
                 ].map(([label, id]) => (
                   <Button
                     key={label}
@@ -1324,9 +1369,22 @@ const Homepage = () => {
           </Grid>
 
           <Divider sx={{ my: 3, borderColor: "rgba(255,255,255,.08)" }} />
-          <Typography sx={{ color: "rgba(255,255,255,.34)", fontSize: ".65rem" }}>
-            © {new Date().getFullYear()} StoreHub. All rights reserved.
-          </Typography>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={{ xs: 1, sm: 2 }}
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            justifyContent="space-between"
+          >
+            <Typography sx={{ color: "rgba(255,255,255,.38)", fontSize: ".68rem" }}>
+              © {new Date().getFullYear()} StoreHub. All rights reserved.
+            </Typography>
+            <Typography sx={{ color: "rgba(255,255,255,.42)", fontSize: ".68rem" }}>
+              Developed by{" "}
+              <Box component="span" sx={{ color: "#A7F3D0", fontWeight: 800 }}>
+                Eugene Dominique Entrealgo
+              </Box>
+            </Typography>
+          </Stack>
         </Container>
       </Box>
 

@@ -50,7 +50,7 @@ import {
   VisibilityOff,
 } from "@mui/icons-material";
 
-import API from "../../api/axios";
+import API from "../../api/accountAdmin";
 import { colors } from "../../theme";
 
 const INITIAL_FORM = {

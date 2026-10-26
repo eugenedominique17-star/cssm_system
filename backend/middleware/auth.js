@@ -12,8 +12,17 @@ async function getAuthenticatedUser(token) {
   let decoded;
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded || typeof decoded !== 'object' || !decoded.id) throw new Error('Invalid token');
   } catch {
+    const supabaseUser = await UserModel.findBySupabaseToken(token);
+    if (!supabaseUser || supabaseUser.status !== 'active') {
+      const error = new Error('Invalid or expired token.');
+      error.status = 401;
+      throw error;
+    }
+    return { ...supabaseUser, role: normalizeRole(supabaseUser.role) };
+  }
+
+  if (!decoded || typeof decoded !== 'object' || !decoded.id) {
     const error = new Error('Invalid or expired token.');
     error.status = 401;
     throw error;
@@ -39,6 +48,13 @@ const authenticate = async (req, res, next) => {
     return res.status(error.status || 503).json({
       message: error.status ? error.message : 'Unable to verify account. Please try again.',
     });
+  }
+  const passwordRoute = req.baseUrl === '/api/auth' && (
+    (req.method === 'GET' && req.path === '/me') ||
+    (req.method === 'POST' && req.path === '/change-password')
+  );
+  if (req.user.must_change_password && !passwordRoute) {
+    return res.status(403).json({ code: 'PASSWORD_CHANGE_REQUIRED', message: 'Change your temporary password before continuing.' });
   }
   next();
 };

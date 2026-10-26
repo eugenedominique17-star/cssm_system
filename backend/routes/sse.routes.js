@@ -29,7 +29,7 @@ router.get('/orders', async (req, res) => {
     ? (user.role.trim().toLowerCase() === 'user' ? 'client' : user.role.trim().toLowerCase())
     : user.role;
 
-  if (normalizedRole !== 'client') {
+  if (normalizedRole !== 'client' || user.must_change_password) {
     return res.status(403).json({ message: 'Forbidden.' });
   }
 
@@ -49,7 +49,8 @@ router.get('/orders', async (req, res) => {
   // Heartbeat every 25 seconds to keep the connection alive through proxies
   const heartbeat = setInterval(async () => {
     try {
-      await getAuthenticatedUser(token);
+      const current = await getAuthenticatedUser(token);
+      if (current.must_change_password) throw new Error('Password change required');
       if (!res.writableEnded) res.write(': heartbeat\n\n');
     } catch {
       clearInterval(heartbeat);

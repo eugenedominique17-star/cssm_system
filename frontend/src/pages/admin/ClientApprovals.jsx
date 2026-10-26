@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, CircularProgress, Alert, Card, Grid } from '@mui/material';
 import { PersonAdd } from '@mui/icons-material';
 import AccountApprovalCards from '../../components/AccountApprovalCards';
-import API from '../../api/axios';
+import API from '../../api/accountAdmin';
 import { colors } from '../../theme';
 
 const ClientApprovals = () => {

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuth();
+  const { pathname } = useLocation();
 
   if (loading) {
     return <div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>;
@@ -14,6 +15,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   const normalizedRole = user?.role === 'user' ? 'client' : user?.role;
+  if (user?.must_change_password && pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
 
   if (allowedRoles && !allowedRoles.includes(normalizedRole)) {
     // Redirect to appropriate dashboard

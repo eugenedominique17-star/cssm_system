@@ -5,6 +5,8 @@
 
 // Map<userId, Set<res>> — one user can have multiple tabs
 const clients = new Map();
+const supabase = require('./config/supabase');
+const UserModel = require('./models/user.model');
 
 /**
  * Register a new SSE client connection.
@@ -36,20 +38,42 @@ function removeClient(userId, res) {
  * @param {string} event  - event name
  * @param {object} data   - payload (will be JSON-stringified)
  */
+function publishToSupabaseUser(userId, event, data) {
+  if (!supabase) return Promise.resolve();
+
+  return UserModel.findById(userId).then(async user => {
+    if (!user?.auth_user_id) return;
+
+    const channel = supabase.channel(`order-status:${user.auth_user_id}`, {
+      config: { private: true },
+    });
+    try {
+      const status = await channel.send({ type: 'broadcast', event, payload: data });
+      if (status !== 'ok') {
+        console.error('Supabase Realtime order notification was not delivered:', status);
+      }
+    } finally {
+      await supabase.removeChannel(channel);
+    }
+  }).catch(error => {
+    console.error('Supabase Realtime order notification failed:', error.code || error.name || 'unknown');
+  });
+}
+
 function sendToUser(userId, event, data) {
   const id = String(userId);
   const set = clients.get(id);
-  if (!set || set.size === 0) return;
-
-  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  for (const res of set) {
-    try {
-      res.write(payload);
-    } catch {
-      // Connection already gone — clean up silently
-      set.delete(res);
+  if (set && set.size > 0) {
+    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    for (const res of set) {
+      try {
+        res.write(payload);
+      } catch {
+        set.delete(res);
+      }
     }
   }
+  return publishToSupabaseUser(userId, event, data);
 }
 
 /**

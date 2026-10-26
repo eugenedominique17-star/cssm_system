@@ -18,13 +18,13 @@ import {
   CheckCircleRounded,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import API from '../../api/axios';
+import API from '../../api/accountAdmin';
 import { useAuth } from '../../contexts/AuthContext';
 
 // Additive: forced first-login password change page (completes the Login.jsx redirect)
 const ChangePassword = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -72,6 +72,7 @@ const ChangePassword = () => {
     try {
       setLoading(true);
       await API.post('/auth/change-password', { currentPassword, newPassword });
+      updateUser({ ...user, must_change_password: false });
       navigate('/change-password/success', { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to change password. Please try again.');
@@ -294,4 +295,3 @@ export const ChangePasswordSuccess = () => {
 };
 
 export default ChangePassword;
-

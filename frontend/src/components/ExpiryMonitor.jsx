@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import API from '../api/axios';
+import API from '../api/inventory';
 import { philippineDate, daysRemaining, matchesExpiry } from '../utils/expiry.mjs';
 
 export default function ExpiryMonitor({ products, batches, admin, onSaved }) {

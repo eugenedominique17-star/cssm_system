@@ -34,9 +34,37 @@ function describeRequest(req) {
   return { action, entity_type: groups[group], entity_id: req.params?.id ? String(req.params.id) : group === 'auth' ? String(req.user.id) : null, details: { requested: details } };
 }
 
-function completion(entry, body, statusCode) {
+function accountStatusDetails(before, after) {
+  return {
+    snapshot_version: 1,
+    result: after.status === 'active' ? 'Account approved successfully.' : 'Account rejected successfully.',
+    account: { id: before.id, user_id: before.user_id, name: before.name, role: before.role },
+    changes: [{ field: 'status', label: 'Account status', before: before.status, after: after.status }],
+  };
+}
+
+function submissionReviewDetails(before, after) {
+  return {
+    snapshot_version: 1,
+    result: after.status === 'rejected' ? 'Submission rejected. The requested changes were not applied.' : 'Submission approved successfully.',
+    submission: { id: before.id, type: before.type },
+    requested_by: { id: before.submitted_by, name: before.submitted_by_name },
+    changes: [
+      { field: 'status', label: 'Submission status', before: before.status, after: after.status },
+      { field: 'admin_notes', label: 'Review notes', before: before.admin_notes ?? null, after: after.admin_notes ?? null },
+    ],
+  };
+}
+
+function completion(entry, body, statusCode, accountDetails, submissionDetails) {
   const result = { outcome: statusCode < 400 ? 'succeeded' : 'failed', finished_at: new Date().toISOString(), details: { ...entry.details, http_status: statusCode } };
   if (statusCode < 400) {
+    if (submissionDetails && ['Approve submission', 'Reject submission'].includes(entry.action)) {
+      result.details = { ...result.details, ...submissionDetails };
+    }
+    if (accountDetails && ['Approve account', 'Reject account'].includes(entry.action)) {
+      result.details = { ...result.details, ...accountDetails };
+    }
     const id = body?.inventoryId ?? body?.submissionId ?? body?.productId ?? body?.promoId ?? body?.userId ?? body?.transactionId;
     if (typeof id === 'number' || typeof id === 'string') result.entity_id = String(id);
     if (body?.submissionId && ['Product', 'Promo'].includes(entry.entity_type)) {
@@ -47,4 +75,4 @@ function completion(entry, body, statusCode) {
   return result;
 }
 
-module.exports = { describeRequest, completion };
+module.exports = { describeRequest, completion, accountStatusDetails, submissionReviewDetails };

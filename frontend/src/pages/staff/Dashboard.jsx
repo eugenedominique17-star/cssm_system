@@ -43,7 +43,9 @@ import {
   WarningAmberRounded,
 } from '@mui/icons-material';
 
-import API from '../../api/axios';
+import API from '../../api/accountAdmin';
+import { getTransactions } from '../../api/sales';
+import { getCatalog } from '../../api/catalog';
 import AnimatedNumber from '../../components/AnimatedNumber';
 import DashboardSkeleton from '../../components/DashboardSkeleton';
 
@@ -81,9 +83,9 @@ const StaffDashboard = () => {
           usersRes,
           meRes,
         ] = await Promise.all([
-          API.get('/products'),
-          API.get('/transactions'),
-          API.get('/promos'),
+          getCatalog('products'),
+          getTransactions(),
+          getCatalog('promos'),
           API.get('/users'),
           API.get('/auth/me'),
         ]);

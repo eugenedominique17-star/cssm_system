@@ -5,6 +5,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 const auditController = require('../controllers/audit.controller');
 
 router.get('/audit-logs', authenticate, authorize('admin'), auditController.list);
+router.post('/audit-logs/:id/reveal-previous-password', authenticate, authorize('admin'), auditController.revealPreviousPassword);
 
 router.get('/dashboard', authenticate, authorize('admin'), adminController.getDashboardStats);
 router.get('/pending-staff', authenticate, authorize('admin'), adminController.getPendingStaff);

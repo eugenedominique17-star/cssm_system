@@ -6,22 +6,18 @@ import {
   Box,
   Stack,
   Typography,
-  IconButton,
   Chip,
-  Tooltip,
   Rating,
 } from "@mui/material";
 
 import {
-  FavoriteBorderRounded,
-  FavoriteRounded,
   ImageNotSupportedRounded,
   Inventory2Outlined,
 } from "@mui/icons-material";
 
 import { motion, useReducedMotion } from "framer-motion";
 
-const ProductCard = ({ product, isFavorited, onFavoriteToggle }) => {
+const ProductCard = ({ product }) => {
   const [imageError, setImageError] = useState(false);
   const reduceMotion = useReducedMotion();
 
@@ -380,84 +376,6 @@ const ProductCard = ({ product, isFavorited, onFavoriteToggle }) => {
           />
         </Box>
 
-        {/* =================================================
-            FAVORITE
-        ================================================= */}
-
-        <Box
-          sx={{
-            position: "absolute",
-
-            top: 11,
-            right: 11,
-
-            zIndex: 4,
-          }}
-        >
-          <Tooltip
-            title={isFavorited ? "Remove from favorites" : "Add to favorites"}
-            arrow
-          >
-            <Box
-              component={motion.div}
-              whileTap={
-                reduceMotion
-                  ? {}
-                  : {
-                      scale: 0.88,
-                    }
-              }
-            >
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-
-                  onFavoriteToggle?.(product.id);
-                }}
-                sx={{
-                  width: 35,
-                  height: 35,
-
-                  bgcolor: "rgba(255,255,255,.92)",
-
-                  backdropFilter: "blur(12px)",
-
-                  border: "1px solid rgba(220,235,231,.95)",
-
-                  color: isFavorited ? "#E54868" : "#78908A",
-
-                  boxShadow: "0 5px 15px rgba(24,61,50,.08)",
-
-                  transition:
-                    "color .2s ease, background-color .2s ease, transform .2s ease",
-
-                  "&:hover": {
-                    bgcolor: "var(--sh-glass-bg)",
-
-                    color: isFavorited ? "#D92D50" : palette.primary,
-
-                    transform: "scale(1.06)",
-                  },
-                }}
-              >
-                {isFavorited ? (
-                  <FavoriteRounded
-                    sx={{
-                      fontSize: 18,
-                    }}
-                  />
-                ) : (
-                  <FavoriteBorderRounded
-                    sx={{
-                      fontSize: 18,
-                    }}
-                  />
-                )}
-              </IconButton>
-            </Box>
-          </Tooltip>
-        </Box>
       </Box>
 
       {/* =====================================================

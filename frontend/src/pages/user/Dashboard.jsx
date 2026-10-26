@@ -34,28 +34,23 @@ import {
   ShoppingBagOutlined,
   StorefrontRounded,
   WarningAmberRounded,
+  CheckCircleRounded,
 } from '@mui/icons-material';
 
 import API from '../../api/axios';
+import { getCatalog } from '../../api/catalog';
+import { getMyTransactions } from '../../api/sales';
 import { useDarkMode } from '../../hooks/useDarkMode';
-import { useFavorites } from '../../hooks/useFavorites';
 import { createAppTheme } from '../../theme';
 import ProductCard from '../../components/ProductCard';
 import FeaturedCarousel from '../../components/FeaturedCarousel';
 import SearchFilterBar from '../../components/SearchFilterBar';
 import DealCountdown from '../../components/DealCountdown';
-import AnalyticsCharts from '../../components/AnalyticsCharts';
 import FloatingActionPanel from '../../components/FloatingActionPanel';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
   const { isDarkMode, toggle: toggleDarkMode } = useDarkMode();
-  const {
-    favorites,
-    toggleFavorite,
-    isFavorited,
-  } = useFavorites();
-
   const [data, setData] = useState({
     products: [],
     promos: [],
@@ -93,9 +88,9 @@ const UserDashboard = () => {
           promoRes,
           transRes,
         ] = await Promise.all([
-          API.get('/products?active=true'),
-          API.get('/promos?active=true'),
-          API.get('/transactions/my'),
+          getCatalog('products', { active: true }),
+          getCatalog('promos', { active: true }),
+          getMyTransactions(),
         ]);
 
         const products = Array.isArray(prodRes.data)
@@ -294,10 +289,6 @@ const UserDashboard = () => {
     setFilterSettings(newFilters);
   };
 
-
-  const handleViewFavorites = () => {
-    navigate('/client/favorites');
-  };
 
   const handleShare = () => {
     const dashboardUrl = window.location.href;
@@ -886,16 +877,99 @@ const UserDashboard = () => {
           products={data.products}
         />
 
-        {/* =====================================================
-            ANALYTICS
-        ====================================================== */}
+        <Paper
+          elevation={0}
+          sx={{
+            mb: 4,
+            p: { xs: 2, sm: 3 },
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            spacing={1.5}
+            sx={{ mb: data.recentOrders.length > 0 ? 2 : 0 }}
+          >
+            <Box>
+              <Typography sx={{ color: 'text.primary', fontSize: 18, fontWeight: 850 }}>
+                Recent Purchases
+              </Typography>
+              <Typography sx={{ mt: 0.3, color: 'text.secondary', fontSize: 12 }}>
+                A quick look at your latest receipts
+              </Typography>
+            </Box>
+            <Button
+              onClick={() => navigate('/client/history')}
+              endIcon={<ArrowForwardRounded />}
+              sx={{ alignSelf: { xs: 'flex-start', sm: 'center' }, textTransform: 'none', fontWeight: 750 }}
+            >
+              View purchase history
+            </Button>
+          </Stack>
 
-        {data.allOrders.length > 0 && (
-          <AnalyticsCharts
-            orders={data.allOrders}
-            products={data.products}
-          />
-        )}
+          {data.recentOrders.length > 0 ? (
+            <Stack spacing={1}>
+              {data.recentOrders.slice(0, 3).map((order) => (
+                <Paper
+                  key={order.id}
+                  elevation={0}
+                  sx={{
+                    p: { xs: 1.5, sm: 2 },
+                    borderRadius: 3,
+                    bgcolor: 'action.hover',
+                  }}
+                >
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                    spacing={1.2}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      <Stack direction="row" spacing={0.8} alignItems="center">
+                        <ReceiptLongRounded sx={{ color: 'primary.main', fontSize: 19 }} />
+                        <Typography sx={{ color: 'text.primary', fontSize: 13, fontWeight: 800 }}>
+                          {order.receipt_number || `Receipt #${order.id}`}
+                        </Typography>
+                        <Stack direction="row" spacing={0.4} alignItems="center" sx={{ color: 'success.main' }}>
+                          <CheckCircleRounded sx={{ fontSize: 15 }} />
+                          <Typography sx={{ fontSize: 11, fontWeight: 700 }}>Completed</Typography>
+                        </Stack>
+                      </Stack>
+                      <Typography
+                        sx={{
+                          mt: 0.5,
+                          color: 'text.secondary',
+                          fontSize: 12,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {order.product_summary || 'Purchase receipt'}
+                      </Typography>
+                      <Typography sx={{ mt: 0.3, color: 'text.secondary', fontSize: 11 }}>
+                        {formatDate(order.created_at)}
+                      </Typography>
+                    </Box>
+                    <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 850, whiteSpace: 'nowrap' }}>
+                      {formatPrice(order.total_amount)}
+                    </Typography>
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
+          ) : (
+            <Typography sx={{ py: 2, color: 'text.secondary', fontSize: 13 }}>
+              No purchases yet. Your completed receipts will appear here.
+            </Typography>
+          )}
+        </Paper>
 
         {/* =====================================================
             CURRENT OFFERS
@@ -1376,12 +1450,6 @@ const UserDashboard = () => {
                   >
                     <ProductCard
                       product={product}
-                      isFavorited={isFavorited(
-                        product.id
-                      )}
-                      onFavoriteToggle={
-                        toggleFavorite
-                      }
                     />
                   </Grid>
                 )
@@ -1395,8 +1463,6 @@ const UserDashboard = () => {
         ====================================================== */}
 
         <FloatingActionPanel
-          favoriteCount={favorites.length}
-          onViewFavorites={handleViewFavorites}
           onShare={handleShare}
           onToggleFilters={() => {
             const searchBar = document.querySelector(

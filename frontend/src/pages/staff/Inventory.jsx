@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, IconButton, Menu, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
 import { AddRounded, Inventory2Rounded, MoreVertRounded, RefreshRounded, HistoryRounded } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import API from '../../api/axios';
+import API from '../../api/inventory';
 import StockRequests from '../../components/StockRequests';
 import { useAuth } from '../../contexts/AuthContext';
 import { philippineDate } from '../../utils/expiry.mjs';

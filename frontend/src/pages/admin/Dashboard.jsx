@@ -23,7 +23,8 @@ import {
   LockReset,
   PersonAdd,
 } from "@mui/icons-material";
-import API from "../../api/axios";
+import API from "../../api/accountAdmin";
+import { getPendingSubmissions } from "../../api/submissions";
 import AnimatedNumber from '../../components/AnimatedNumber';
 import DashboardSkeleton from '../../components/DashboardSkeleton';
 
@@ -50,7 +51,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchResetRequests = async () => {
       try {
-        const response = await API.get("/admin/pending-submissions");
+        const response = await getPendingSubmissions();
         const resets = (
           Array.isArray(response.data) ? response.data : []
         ).filter((s) => s.type === "password_reset");
@@ -127,7 +128,7 @@ const AdminDashboard = () => {
       value: stats?.totalUsers || 0,
       icon: <People />,
       color: "blue",
-      link: "/admin/accounts",
+      link: "/admin/accounts/clients",
     },
     {
       label: "Total Products",
@@ -171,7 +172,7 @@ const AdminDashboard = () => {
       label: "Manage Accounts",
       icon: <People />,
       color: "blue",
-      link: "/admin/accounts",
+      link: "/admin/accounts/clients",
       desc: "View & manage all user accounts",
     },
     {

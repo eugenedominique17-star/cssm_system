@@ -6,7 +6,8 @@ import {
 
 } from '@mui/material';
 import { Inventory, Search, Download, RestartAlt, AddCircleOutline } from '@mui/icons-material';
-import API from '../../api/axios';
+import API from '../../api/catalogMutations';
+import { getCatalog } from '../../api/catalog';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../../theme';
 
@@ -33,7 +34,7 @@ const ProductMonitor = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await API.get('/products');
+      const response = await getCatalog('products');
       setProducts(response.data.data || response.data || []);
     } catch (error) {
       console.error('Failed to fetch products:', error);

@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { FavoriteBorderRounded } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import API from "../../api/axios";
+import { getCatalog } from "../../api/catalog";
 import ProductCard from "../../components/ProductCard";
 import { useFavorites } from "../../hooks/useFavorites";
 import { useCart } from "../../contexts/CartContext";
@@ -28,7 +28,7 @@ const Favorites = () => {
       try {
         setLoading(true);
         setError("");
-        const response = await API.get("/products?active=true");
+        const response = await getCatalog("products", { active: true });
         const allProducts = Array.isArray(response.data) ? response.data : [];
         setProducts(
           allProducts.filter((product) => favorites.includes(product.id)),

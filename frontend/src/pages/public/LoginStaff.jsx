@@ -101,10 +101,10 @@ const LoginStaff = () => {
           </Alert>
         )}
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} autoComplete="off">
           <TextField
             fullWidth
-            label="Email or User ID"
+            autoComplete="off" label="Email or User ID"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             required
@@ -120,7 +120,7 @@ const LoginStaff = () => {
           />
           <TextField
             fullWidth
-            label="Password"
+            autoComplete="off" label="Password"
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}

@@ -7,6 +7,7 @@
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^5.16.4",
     "@mui/material": "^5.16.4",
+    "@supabase/supabase-js": "2.111.0",
     "axios": "^1.7.2",
     "chart.js": "^4.4.3",
     "react": "^18.3.1",
@@ -17,10 +18,21 @@
   },
   "scripts": {
     "start": "node start-random.js",
-    "build": "react-scripts build"
+    "build": "node --max-old-space-size=768 --max-semi-space-size=8 scripts/build-low-memory.cjs"
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "typescript": "4.9.5"
   }
 }

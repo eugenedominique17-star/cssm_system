@@ -1,4 +1,8 @@
 const Audit = require('../models/audit.model');
+const AuditSecret = require('../models/audit-secret.model');
+const UserModel = require('../models/user.model');
+const bcrypt = require('bcryptjs');
+const authPassword = require('../utils/supabase-auth-password');
 const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 
 exports.list = async (req, res) => {
@@ -17,5 +21,35 @@ exports.list = async (req, res) => {
   } catch (error) {
     console.error('Audit list failed:', error.code || 'unavailable');
     res.status(503).json({ message: 'Audit history is unavailable. Check the audit database migration and connection.' });
+  }
+};
+
+exports.revealPreviousPassword = async (req, res) => {
+  const auditEventId = req.params.id;
+  const adminPassword = req.body?.adminPassword;
+  let auditId;
+  const finish = async (outcome, details = {}) => {
+    if (auditId) await Audit.finish(auditId, { outcome, entity_id: auditEventId, details: { ...details, http_status: outcome === 'succeeded' ? 200 : 403 } });
+  };
+  try {
+    auditId = await Audit.start({ actor_id: String(req.user.id), actor_name: String(req.user.full_name || req.user.name || req.user.user_id || 'Admin'), actor_role: 'admin', action: 'Reveal previous password', entity_type: 'Account', entity_id: auditEventId, details: { requested: {} } });
+    if (typeof adminPassword !== 'string' || !adminPassword) {
+      await finish('failed', { result: 'Fresh admin authentication was not provided.' });
+      return res.status(401).json({ message: 'Enter your current admin password.' });
+    }
+    const admin = await UserModel.findByIdWithPassword(req.user.id);
+    if (!admin) return res.status(401).json({ message: 'Admin authentication failed.' });
+    if (admin.auth_user_id) await authPassword.verifyCurrentPassword(admin.auth_user_id, admin.email, adminPassword);
+    else if (!await bcrypt.compare(adminPassword, admin.password)) throw Object.assign(new Error('Current admin password is incorrect.'), { status: 401 });
+    const previousPassword = await AuditSecret.reveal(auditEventId);
+    if (previousPassword === null) {
+      await finish('failed', { result: 'Previous password is unavailable.' });
+      return res.status(404).json({ message: 'Previous password is unavailable.' });
+    }
+    await finish('succeeded', { result: 'Previous password revealed.' });
+    return res.json({ previousPassword });
+  } catch (error) {
+    if (auditId) await finish('failed', { result: 'Previous password reveal was denied.' }).catch(() => {});
+    return res.status(error.status || 401).json({ message: error.status ? error.message : 'Admin authentication failed.' });
   }
 };

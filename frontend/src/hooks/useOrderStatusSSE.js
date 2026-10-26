@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_BASE } from '../api/baseUrl';
+import { supabase, supabaseAuthEnabled } from '../api/supabase';
 
 /**
  * useOrderStatusSSE
@@ -11,6 +12,7 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
  */
 export function useOrderStatusSSE({ onUpdate, enabled = true }) {
   const esRef = useRef(null);
+  const channelRef = useRef(null);
   const onUpdateRef = useRef(onUpdate);
 
   // Keep ref in sync so the effect closure doesn't go stale
@@ -22,10 +24,48 @@ export function useOrderStatusSSE({ onUpdate, enabled = true }) {
     const token = localStorage.getItem('token');
     if (!token || !enabled) return;
 
-    // Close any existing connection
     if (esRef.current) {
       esRef.current.close();
       esRef.current = null;
+    }
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    if (supabaseAuthEnabled) {
+      let cancelled = false;
+      let channel = null;
+      const subscribe = async () => {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (cancelled || !data.session?.access_token || !data.session.user?.id) return;
+
+        supabase.realtime.setAuth(data.session.access_token);
+        channel = supabase
+          .channel(`order-status:${data.session.user.id}`, { config: { private: true } })
+          .on('broadcast', { event: 'order_status_update' }, ({ payload }) => {
+            if (payload && typeof payload === 'object') onUpdateRef.current?.(payload);
+          })
+          .subscribe((status, error) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.error('Supabase Realtime order status subscription failed:', error || status);
+            }
+          });
+        channelRef.current = channel;
+      };
+
+      subscribe().catch(error => {
+        console.error('Could not start Supabase Realtime order status subscription:', error);
+      });
+
+      return () => {
+        cancelled = true;
+        if (channel) {
+          supabase.removeChannel(channel);
+          if (channelRef.current === channel) channelRef.current = null;
+        }
+      };
     }
 
     const url = `${API_BASE}/sse/orders?token=${encodeURIComponent(token)}`;
@@ -56,10 +96,11 @@ export function useOrderStatusSSE({ onUpdate, enabled = true }) {
   useEffect(() => {
     if (!enabled) return;
 
-    const es = connect();
+    const connection = connect();
 
     return () => {
-      es?.close();
+      if (typeof connection === 'function') connection();
+      else connection?.close();
       esRef.current = null;
     };
   }, [connect, enabled]);
@@ -68,6 +109,10 @@ export function useOrderStatusSSE({ onUpdate, enabled = true }) {
   const disconnect = useCallback(() => {
     esRef.current?.close();
     esRef.current = null;
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
   }, []);
 
   return { disconnect };

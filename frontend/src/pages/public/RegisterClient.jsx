@@ -33,6 +33,7 @@ import {
 } from "@mui/icons-material";
 
 import API from "../../api/axios";
+import { supabase, supabaseAuthEnabled } from "../../api/supabase";
 import { colors } from "../../theme";
 
 const RegisterClient = () => {
@@ -123,7 +124,7 @@ const RegisterClient = () => {
         middleName.trim() ? `${middleName.trim()} ` : ""
       }${lastName.trim()}`.trim();
 
-      const response = await API.post("/auth/register/client", {
+      const payload = {
         name: fullName,
         first_name: firstName.trim(),
         middle_name: middleName.trim(),
@@ -134,7 +135,28 @@ const RegisterClient = () => {
         phone: phone.trim(),
         email: email.trim().toLowerCase(),
         password,
-      });
+      };
+      let response;
+      if (supabaseAuthEnabled) {
+        const { data, error } = await supabase.functions.invoke("legacy-auth-migrate", {
+          body: { ...payload, action: "register-client" },
+        });
+        if (error) {
+          let message = error.message || "Registration failed. Please try again.";
+          if (error.context && typeof error.context.json === "function") {
+            try {
+              const body = await error.context.json();
+              if (typeof body?.message === "string") message = body.message;
+            } catch {
+              // Use the SDK message when the function response is not JSON.
+            }
+          }
+          throw Object.assign(new Error(message), { response: { data: { message } } });
+        }
+        response = { data };
+      } else {
+        response = await API.post("/auth/register/client", payload);
+      }
 
       setSuccess(
         response?.data?.message ||

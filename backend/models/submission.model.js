@@ -2,6 +2,18 @@ const { db } = require('../config/db');
 const supabase = require('../config/supabase');
 
 const SubmissionModel = {
+  async reviewAtomic(id, status, notes, actorId, passwordHash = null) {
+    const { data, error } = await supabase.rpc('review_submission_atomic', {
+      p_id: Number(id), p_status: status, p_notes: notes ?? null,
+      p_actor_id: actorId, p_password_hash: passwordHash,
+    });
+    if (error) {
+      const code = /^PT(400|403|404|409)$/.exec(error.code || '');
+      throw Object.assign(new Error(code ? error.message : 'Submission review unavailable.'), { status: code ? Number(code[1]) : 503, code: error.code });
+    }
+    if (!data?.before || !data?.after) throw new Error('Missing saved submission review.');
+    return data;
+  },
   async create({ type, data, submitted_by }) {
     const submission = await db.pending_submissions.insert({
       type, data: typeof data === 'object' ? data : JSON.parse(data),

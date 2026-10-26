@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "supabase.vscode-supabase-extension"
+        "supabase.vscode-supabase-extension",
+        "denoland.vscode-deno"
     ]
 }

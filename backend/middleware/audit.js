@@ -21,7 +21,11 @@ function createAuditMiddleware(store = Audit) {
       if (finalized) return res;
       finalized = true;
       const status = res.statusCode;
-      Promise.resolve().then(() => store.finish(id, completion(entry, body, status)))
+      Promise.resolve().then(() => {
+        const fields = completion(entry, body, status, req.accountAuditDetails, req.submissionAuditDetails);
+        if (req.passwordAuditDetails) fields.details = { ...fields.details, ...req.passwordAuditDetails };
+        return store.finish(id, fields);
+      })
         .catch(error => {
           // Do not turn a completed sale into a retryable error. Pending row remains visible.
           console.error('Audit completion failed:', id, error.code || 'unavailable');

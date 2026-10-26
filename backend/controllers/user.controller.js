@@ -2,12 +2,9 @@ const bcrypt = require('bcryptjs');
 const Joi = require('joi');
 const UserModel = require('../models/user.model');
 const SubmissionModel = require('../models/submission.model');
+const { accountStatusDetails } = require('../utils/audit');
 
-// Additive: simple pattern temp password generator (e.g. client123 / staff123)
-const generateTempPassword = (role) => {
-  const normalizedRole = String(role || 'client').toLowerCase();
-  return `${normalizedRole}123`;
-};
+const { generateTempPassword } = require('../utils/password');
 
 const createUserSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
@@ -98,7 +95,9 @@ exports.approve = async (req, res) => {
     const user = await UserModel.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
-    await UserModel.updateStatus(req.params.id, 'active');
+    const updated = await UserModel.updateStatus(req.params.id, 'active');
+    if (!updated) return res.status(404).json({ message: 'User not found.' });
+    req.accountAuditDetails = accountStatusDetails(user, updated);
     res.json({ message: 'User approved successfully.' });
   } catch (error) {
     console.error('Approve user error:', error);
@@ -111,7 +110,9 @@ exports.reject = async (req, res) => {
     const user = await UserModel.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
-    await UserModel.updateStatus(req.params.id, 'rejected');
+    const updated = await UserModel.updateStatus(req.params.id, 'rejected');
+    if (!updated) return res.status(404).json({ message: 'User not found.' });
+    req.accountAuditDetails = accountStatusDetails(user, updated);
     res.json({ message: 'User rejected successfully.' });
   } catch (error) {
     console.error('Reject user error:', error);
@@ -164,7 +165,8 @@ exports.createStaff = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { name, email, role, status } = req.body;
-    await UserModel.update(req.params.id, { name, email, role, status });
+    const updated = await UserModel.update(req.params.id, { name, email, role, status });
+    if (!updated) return res.status(500).json({ message: 'Account update could not be saved.' });
     res.json({ message: 'User updated successfully.' });
   } catch (error) {
     console.error('Update user error:', error);
@@ -180,7 +182,8 @@ exports.deactivate = async (req, res) => {
       return res.status(400).json({ message: 'Admin accounts cannot be deactivated.' });
     }
 
-    await UserModel.updateStatus(req.params.id, 'inactive');
+    const updated = await UserModel.updateStatus(req.params.id, 'inactive');
+    if (!updated) return res.status(500).json({ message: 'Account deactivation could not be saved.' });
     res.json({ message: 'User deactivated successfully.' });
   } catch (error) {
     console.error('Deactivate user error:', error);
@@ -190,7 +193,8 @@ exports.deactivate = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
-    await UserModel.delete(req.params.id);
+    const deleted = await UserModel.delete(req.params.id);
+    if (!deleted) return res.status(500).json({ message: 'Account deletion could not be saved.' });
     res.json({ message: 'User deleted successfully.' });
   } catch (error) {
     console.error('Delete user error:', error);
@@ -198,7 +202,7 @@ exports.delete = async (req, res) => {
   }
 };
 
-// Additive: Admin-only password reset (simple pattern, forced change on next login)
+// Admin-only password reset; show the random credential only in this response.
 exports.resetPassword = async (req, res) => {
   try {
     const user = await UserModel.findByIdWithPassword(req.params.id);
@@ -208,7 +212,20 @@ exports.resetPassword = async (req, res) => {
     const tempPassword = generateTempPassword(user.role);
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(tempPassword, salt);
-    await UserModel.updatePassword(user.id, hashed, true);
+    const updated = await UserModel.updatePassword(user.id, hashed, true);
+    if (!updated) return res.status(500).json({ message: 'Password reset could not be saved.' });
+    if (user.auth_user_id) {
+      try {
+        await require('../utils/supabase-auth-password').updateSupabasePassword(user.auth_user_id, tempPassword);
+      } catch (error) {
+        const restored = await UserModel.updatePassword(user.id, user.password, Boolean(user.must_change_password));
+        if (!restored) {
+          console.error('Legacy password rollback failed after Supabase Auth reset failure:', error.code || 'unavailable');
+          return res.status(503).json({ message: 'Password reset synchronization failed. Contact an administrator.' });
+        }
+        return res.status(error.status || 503).json({ message: error.message || 'Password reset synchronization failed.' });
+      }
+    }
 
     res.json({
       message: 'Password reset successfully. User must change it on next login.',

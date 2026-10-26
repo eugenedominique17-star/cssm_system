@@ -4,7 +4,7 @@ const authController = require('../controllers/auth.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 const { auditMutation } = require('../middleware/audit');
 
-router.post('/login', authController.login);
+router.post('/login', require('../middleware/login-limit'), authController.login);
 router.post('/register/staff', authController.registerStaff);
 router.post('/register/client', authController.registerClient);
 router.get('/me', authenticate, authController.getMe);

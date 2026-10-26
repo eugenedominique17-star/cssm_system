@@ -29,6 +29,8 @@ import {
   Card,
   Avatar,
   IconButton,
+  Tab,
+  Tabs,
   Tooltip,
 } from "@mui/material";
 
@@ -46,10 +48,10 @@ import {
   Add,
 } from "@mui/icons-material";
 
-import API from "../../api/axios";
+import API from "../../api/accountAdmin";
 import { colors } from "../../theme";
 
-const AccountManagement = () => {
+const AccountManagement = ({ accountRole }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +63,7 @@ const AccountManagement = () => {
     middle_name: "",
     last_name: "",
     email: "",
-    role: "client",
+    role: accountRole || "client",
     status: "active",
     contact_number: "",
     address: "",
@@ -78,6 +80,7 @@ const AccountManagement = () => {
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [statusView, setStatusView] = useState("current");
 
   const [resetState, setResetState] = useState({
     open: false,
@@ -85,6 +88,14 @@ const AccountManagement = () => {
     loading: false,
     credentials: null,
   });
+
+  const roleUsers = accountRole ? users.filter((user) => user.role === accountRole) : users;
+  const visibleUsers = roleUsers.filter((user) =>
+    statusView === "rejected"
+      ? user.status === "rejected"
+      : user.status !== "rejected"
+  );
+  const pageLabel = accountRole === "staff" ? "Staff" : accountRole === "client" ? "Clients" : "Accounts";
 
   useEffect(() => {
     fetchUsers();
@@ -140,7 +151,7 @@ const AccountManagement = () => {
         middle_name: "",
         last_name: "",
         email: "",
-        role: "client",
+        role: accountRole || "client",
         status: "active",
         contact_number: "",
         address: "",
@@ -562,7 +573,7 @@ const AccountManagement = () => {
               letterSpacing: "-0.025em",
             }}
           >
-            Account Management
+            {pageLabel}
           </Typography>
 
           <Typography
@@ -576,7 +587,7 @@ const AccountManagement = () => {
               lineHeight: 1.5,
             }}
           >
-            Manage client and staff accounts, roles, and account status.
+            Manage {pageLabel.toLowerCase()} accounts and account status.
           </Typography>
         </Box>
 
@@ -631,22 +642,22 @@ const AccountManagement = () => {
         {[
           {
             label: "Total Accounts",
-            value: users.length,
+            value: roleUsers.length,
             background: "linear-gradient(135deg, #066649, #27AE80)",
           },
           {
             label: "Active",
-            value: users.filter((user) => user.status === "active").length,
+            value: roleUsers.filter((user) => user.status === "active").length,
             background: "linear-gradient(135deg, #15806F, #34C6A8)",
           },
           {
             label: "Pending",
-            value: users.filter((user) => user.status === "pending").length,
+            value: roleUsers.filter((user) => user.status === "pending").length,
             background: "linear-gradient(135deg, #D6A34A, #F2C66D)",
           },
           {
             label: "Rejected",
-            value: users.filter((user) => user.status === "rejected").length,
+            value: roleUsers.filter((user) => user.status === "rejected").length,
             background: "linear-gradient(135deg, #C96A6A, #E89A8F)",
           },
         ].map((item) => (
@@ -722,6 +733,34 @@ const AccountManagement = () => {
         </Alert>
       )}
 
+      <Tabs
+        value={statusView}
+        onChange={(_, value) => setStatusView(value)}
+        sx={{
+          mb: 1.5,
+          minHeight: 42,
+          borderBottom: "1px solid #D5E5D9",
+          "& .MuiTab-root": {
+            minHeight: 42,
+            px: 1.5,
+            textTransform: "none",
+            fontWeight: 750,
+            color: "#6B817C",
+          },
+          "& .Mui-selected": { color: colors.primary },
+          "& .MuiTabs-indicator": { bgcolor: colors.primary, height: 3 },
+        }}
+      >
+        <Tab
+          value="current"
+          label={`Active & Pending (${roleUsers.filter((user) => user.status !== "rejected").length})`}
+        />
+        <Tab
+          value="rejected"
+          label={`Rejected (${roleUsers.filter((user) => user.status === "rejected").length})`}
+        />
+      </Tabs>
+
       {/* =====================================================
           TABLE
       ===================================================== */}
@@ -789,7 +828,13 @@ const AccountManagement = () => {
           </TableHead>
 
           <TableBody>
-            {users.map((user) => (
+            {visibleUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 6, color: "#6B817C" }}>
+                  No {statusView === "rejected" ? "rejected" : "active or pending"} {pageLabel.toLowerCase()} accounts.
+                </TableCell>
+              </TableRow>
+            ) : visibleUsers.map((user) => (
               <TableRow
                 key={user.id}
                 sx={{
@@ -1329,6 +1374,7 @@ const AccountManagement = () => {
                 <Select
                   value={formData.role}
                   label="Role"
+                  disabled={Boolean(accountRole)}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -1469,17 +1515,22 @@ const AccountManagement = () => {
       <Modal
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}
+        BackdropProps={{
+          sx: {
+            backgroundColor: "rgba(15, 40, 35, 0.58)",
+          },
+        }}
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-
           p: 2,
         }}
       >
         <Box
           sx={{
-            bgcolor: "var(--sh-glass-bg)",
+            bgcolor: "#F8FCFA",
+            opacity: 1,
 
             width: "100%",
             maxWidth: 570,
@@ -1491,6 +1542,7 @@ const AccountManagement = () => {
             borderRadius: "16px",
 
             boxShadow: "0 25px 70px rgba(17,94,89,0.18)",
+            isolation: "isolate",
           }}
         >
           <Box

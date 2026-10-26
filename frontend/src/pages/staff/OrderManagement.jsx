@@ -35,7 +35,14 @@ import {
   ShoppingCartRounded,
   ImageNotSupportedRounded,
 } from "@mui/icons-material";
-import API from "../../api/axios";
+import API from "../../api/accountAdmin";
+import { getCatalog } from "../../api/catalog";
+import {
+  cancelWalkInRequest,
+  createSale,
+  getPendingWalkInRequests,
+  getTransactions,
+} from "../../api/sales";
 
 const statusConfig = {
   pending: { label: "Pending", color: "warning", icon: <HourglassTopRounded fontSize="small" /> },
@@ -65,10 +72,10 @@ const OrderManagement = () => {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError("");
       const [pendingResponse, transactionsResponse, clientsResponse, productsResponse] = await Promise.all([
-        API.get("/transactions/walk-in-requests/pending"),
-        API.get("/transactions"),
+        getPendingWalkInRequests(),
+        getTransactions(),
         API.get("/users?role=client"),
-        API.get("/products?active=true"),
+        getCatalog("products", { active: true }),
       ]);
       setPendingOrders(Array.isArray(pendingResponse.data) ? pendingResponse.data : []);
       setCompletedOrders(Array.isArray(transactionsResponse.data) ? transactionsResponse.data : []);
@@ -137,7 +144,7 @@ const OrderManagement = () => {
     try {
       setError("");
       setCancellingOrderId(orderId);
-      await API.post(`/transactions/walk-in-requests/${orderId}/cancel`);
+      await cancelWalkInRequest(orderId);
       await loadOrders(true);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to cancel this order.");
@@ -171,7 +178,7 @@ const OrderManagement = () => {
     try {
       setCreatingOrder(true);
       setError("");
-      await API.post("/transactions", {
+      await createSale({
         user_id: Number(selectedClientId),
         payment_method: "cash",
         tendered_amount: tendered,

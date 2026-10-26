@@ -77,7 +77,8 @@ exports.update = async (req, res) => {
       return res.json({ message: 'Update submitted for admin approval.', submissionId });
     }
 
-    await PromoModel.update(req.params.id, { title, description, discount_type, discount_value, start_date, end_date, status });
+    const updated = await PromoModel.update(req.params.id, { title, description, discount_type, discount_value, start_date, end_date, status });
+    if (!updated) return res.status(500).json({ message: 'Promo update could not be saved.' });
     res.json({ message: 'Promo updated successfully.' });
   } catch (error) {
     console.error('Update promo error:', error);
@@ -89,7 +90,8 @@ exports.delete = async (req, res) => {
   try {
     const promo = await PromoModel.getById(req.params.id);
     if (!promo) return res.status(404).json({ message: 'Promo not found.' });
-    await PromoModel.delete(req.params.id);
+    const deleted = await PromoModel.delete(req.params.id);
+    if (!deleted) return res.status(500).json({ message: 'Promo deletion could not be saved.' });
     res.json({ message: 'Promo deleted successfully.' });
   } catch (error) {
     console.error('Delete promo error:', error);

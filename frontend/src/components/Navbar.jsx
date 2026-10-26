@@ -87,9 +87,9 @@ const Navbar = ({ homepage = false }) => {
           link: "/admin/dashboard",
         },
         {
-          label: "Accounts",
+          label: "Clients",
           icon: <PeopleAltRounded fontSize="small" />,
-          link: "/admin/accounts",
+          link: "/admin/accounts/clients",
         },
         {
           label: "Staff Approvals",

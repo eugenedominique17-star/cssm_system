@@ -8,7 +8,7 @@ import {
   ArcElement, BarElement, CategoryScale, Chart as ChartJS, Filler,
   Legend, LineElement, LinearScale, PointElement, RadialLinearScale, Tooltip,
 } from 'chart.js';
-import API from '../../api/axios';
+import API from '../../api/adminData';
 import { useAuth } from '../../contexts/AuthContext';
 import { calculateSevenDaySalesEstimate } from '../../utils/salesForecast.mjs';
 

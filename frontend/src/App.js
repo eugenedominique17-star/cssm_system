@@ -42,7 +42,6 @@ import StaffSubmissions from './pages/staff/Submissions';
 import UserDashboard from './pages/user/Dashboard';
 import OrderHistory from './pages/user/OrderHistory';
 import Profile from './pages/user/Profile';
-import Favorites from './pages/user/Favorites';
 
 function App() {
   const location = useLocation();
@@ -165,9 +164,16 @@ function App() {
           <Route path="/staff/inventory" element={dashboardPage(<BodegaInventory />, ['staff'])} />
 
           <Route
-            path="/admin/accounts"
+            path="/admin/accounts/clients"
             element={dashboardPage(
-              <AccountManagement />,
+              <AccountManagement accountRole="client" />,
+              ['admin']
+            )}
+          />
+          <Route
+            path="/admin/accounts/staff"
+            element={dashboardPage(
+              <AccountManagement accountRole="staff" />,
               ['admin']
             )}
           />
@@ -288,14 +294,6 @@ function App() {
             path="/client/history"
             element={dashboardPage(
               <OrderHistory />,
-              ['client']
-            )}
-          />
-
-          <Route
-            path="/client/favorites"
-            element={dashboardPage(
-              <Favorites />,
               ['client']
             )}
           />

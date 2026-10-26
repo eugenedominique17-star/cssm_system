@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Avatar, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
 import { HistoryRounded, RefreshRounded } from '@mui/icons-material';
-import API from '../../api/axios';
+import API from '../../api/adminData';
 import AuditActivityDetails from '../../components/AuditActivityDetails';
 import { auditTitle } from '../../utils/auditDetails.mjs';
 
@@ -19,6 +19,7 @@ export default function AuditLogs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
+  const [revealedPassword, setRevealedPassword] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -56,17 +57,18 @@ export default function AuditLogs() {
       {error ? <Alert severity="error" action={<Button color="inherit" onClick={() => setRefresh(value => value + 1)}>Retry</Button>}>{error}</Alert> : loading ? <Box role="status"><span className="sr-only">Loading audit history</span>{[1, 2, 3, 4].map(key => <Skeleton key={key} variant="rounded" height={64} sx={{ mb: 1 }} />)}</Box> : <>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 720 }} aria-label="Audit history">
-            <TableHead><TableRow>{['Person', 'Action', 'Reference', 'Result', 'Time', 'Details'].map(label => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead>
+            <TableHead><TableRow>{['Account affected', 'Changed by', 'Action', 'Previous password', 'Result', 'Time', 'Details'].map(label => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead>
             <TableBody>
               {data.entries.map(entry => <TableRow key={entry.id} hover>
+                <TableCell>{entry.details?.account?.name || (entry.action === 'Change password' ? `#${entry.entity_id || 'Unavailable'}` : 'Not applicable')}</TableCell>
                 <TableCell><Typography variant="body2" fontWeight={700}>{entry.actor_name}</Typography><Typography variant="caption" color="text.secondary">{entry.actor_role} · #{entry.actor_id}</Typography></TableCell>
                 <TableCell>{auditTitle(entry)}</TableCell>
-                <TableCell>{entry.details?.reference_type || entry.entity_type}{entry.entity_id ? ` #${entry.entity_id}` : ''}</TableCell>
+                <TableCell>{entry.action === 'Change password' && entry.outcome === 'succeeded' ? entry.details?.previous_password?.masked || 'Unavailable' : 'Not applicable'}</TableCell>
                 <TableCell><Chip size="small" color={outcomeColor[entry.outcome]} label={outcomeLabel[entry.outcome]} /></TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>{timestamp(entry.created_at)}</TableCell>
-                <TableCell><Button size="small" onClick={() => setSelected(entry)} aria-label={`View ${auditTitle(entry)} by ${entry.actor_name}`}>View</Button></TableCell>
+                <TableCell><Button size="small" onClick={() => { setRevealedPassword(''); setSelected(entry); }} aria-label={`View ${auditTitle(entry)} by ${entry.actor_name}`}>View</Button></TableCell>
               </TableRow>)}
-              {!data.entries.length && <TableRow><TableCell colSpan={6} sx={{ textAlign: 'center', py: 7 }}><HistoryRounded sx={{ fontSize: 44, color: '#087F5B', mb: 1 }} /><Typography fontWeight={700}>No activity found</Typography><Typography variant="body2" color="text.secondary">New activity appears here after audit logging is enabled. Try clearing your filters.</Typography></TableCell></TableRow>}
+              {!data.entries.length && <TableRow><TableCell colSpan={7} sx={{ textAlign: 'center', py: 7 }}><HistoryRounded sx={{ fontSize: 44, color: '#087F5B', mb: 1 }} /><Typography fontWeight={700}>No activity found</Typography><Typography variant="body2" color="text.secondary">New activity appears here after audit logging is enabled. Try clearing your filters.</Typography></TableCell></TableRow>}
             </TableBody>
           </Table>
           <TablePagination component="div" count={data.total} page={page} rowsPerPage={25} rowsPerPageOptions={[25]} onPageChange={(_, value) => setPage(value)} />
@@ -79,7 +81,17 @@ export default function AuditLogs() {
           <Typography fontWeight={800}>{auditTitle(selected)}</Typography>
           <Typography>{selected.actor_name} · {selected.actor_role}</Typography>
           <Typography variant="body2">Started: {timestamp(selected.created_at)}<br />Finished: {timestamp(selected.finished_at)}</Typography>
-          <AuditActivityDetails entry={selected} />
+          <AuditActivityDetails entry={selected} onRevealPreviousPassword={async () => {
+            const password = window.prompt('Enter your current admin password to reveal the previous password.');
+            if (!password) return;
+            try {
+              const response = await API.post(`/admin/audit-logs/${selected.id}/reveal-previous-password`, { adminPassword: password });
+              setRevealedPassword(response.data?.previousPassword || response.data?.data?.previousPassword || 'Unavailable');
+            } catch (error) {
+              setRevealedPassword(error.response?.data?.message || 'Previous password is unavailable.');
+            }
+          }} />
+          {revealedPassword && selected?.action === 'Change password' && <Alert severity="info">Previous password: {revealedPassword}</Alert>}
           <Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>Audit ID: {selected.id}</Typography>
         </Stack>}</DialogContent>
         <DialogActions><Button onClick={() => setSelected(null)}>Close</Button></DialogActions>

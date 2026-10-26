@@ -32,7 +32,7 @@ import {
   Cancel,
   StorefrontRounded,
 } from "@mui/icons-material";
-import API from "../../api/axios";
+import { getMyTransactions, getTransactionDetail } from "../../api/sales";
 import { colors } from "../../theme";
 import { useOrderStatusSSE } from "../../hooks/useOrderStatusSSE";
 
@@ -53,7 +53,7 @@ const OrderHistory = () => {
   // Refresh orders list from the server (called after SSE update)
   const refreshRequests = useCallback(async () => {
     try {
-      const res = await API.get("/transactions/my");
+      const res = await getMyTransactions();
       setOrders(Array.isArray(res.data) ? res.data : []);
     } catch {
       // Silent refresh failure — existing data remains
@@ -81,7 +81,7 @@ const OrderHistory = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await API.get("/transactions/my");
+        const res = await getMyTransactions();
         setOrders(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
         console.error("Failed to fetch orders:", error);
@@ -98,7 +98,7 @@ const OrderHistory = () => {
 
   const handleView = async (id) => {
     try {
-      const response = await API.get(`/transactions/${id}`);
+      const response = await getTransactionDetail(id);
       setSelectedOrder(response.data);
       setViewDialog(true);
     } catch (error) {
