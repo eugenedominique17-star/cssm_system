@@ -60,6 +60,7 @@ import { getCatalog } from "../../api/catalog";
 const INITIAL_FORM = {
   title: "",
   description: "",
+  product_id: "",
   discount_type: "percentage",
   discount_value: "",
   start_date: "",
@@ -68,6 +69,7 @@ const INITIAL_FORM = {
 
 const PromoManagement = () => {
   const [promos, setPromos] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -151,6 +153,9 @@ const PromoManagement = () => {
 
   useEffect(() => {
     fetchPromos();
+    getCatalog("products", { active: true })
+      .then(response => setProducts(Array.isArray(response.data) ? response.data : []))
+      .catch(error => showAlert(error?.response?.data?.message || "Unable to load products for promotions.", "error"));
 
     return () => {
       if (alertTimerRef.current) {
@@ -349,6 +354,7 @@ const PromoManagement = () => {
       setFormData({
         title: promo.title || "",
         description: promo.description || "",
+        product_id: promo.product_id ? String(promo.product_id) : "",
         discount_type: promo.discount_type || "percentage",
         discount_value:
           promo.discount_value !== null && promo.discount_value !== undefined
@@ -449,6 +455,7 @@ const PromoManagement = () => {
     try {
       const payload = {
         ...formData,
+        product_id: formData.product_id ? Number(formData.product_id) : null,
 
         title: formData.title.trim(),
 
@@ -1469,6 +1476,22 @@ const PromoManagement = () => {
               value={formData.description}
               onChange={handleFieldChange("description")}
             />
+
+            <FormControl fullWidth>
+              <InputLabel>Product picture</InputLabel>
+              <Select
+                value={formData.product_id}
+                label="Product picture"
+                onChange={handleFieldChange("product_id")}
+              >
+                <MenuItem value="">No linked product</MenuItem>
+                {products.map(product => (
+                  <MenuItem key={product.id} value={String(product.id)}>
+                    {product.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             <FormControl fullWidth>
               <InputLabel>Discount Type</InputLabel>

@@ -1051,6 +1051,14 @@ const Homepage = () => {
                               : "linear-gradient(135deg,#FFE1CF,#FFF0E7)",
                       }}
                     >
+                      {promo.image_url && (
+                        <Box
+                          component="img"
+                          src={promo.image_url}
+                          alt=""
+                          sx={{ width: "100%", height: 130, objectFit: "contain", mb: 1.5 }}
+                        />
+                      )}
                       <Chip
                         label={promoLabel(promo)}
                         sx={{ bgcolor: "#E93452", color: "#fff", fontWeight: 950 }}

@@ -40,13 +40,15 @@ BEGIN
             discount_type=CASE WHEN d ? 'discount_type' THEN d->>'discount_type' ELSE discount_type END,
             discount_value=CASE WHEN d ? 'discount_value' THEN (d->>'discount_value')::numeric ELSE discount_value END,
             start_date=CASE WHEN d ? 'start_date' THEN (d->>'start_date')::timestamptz ELSE start_date END,
-            end_date=CASE WHEN d ? 'end_date' THEN (d->>'end_date')::timestamptz ELSE end_date END
+            end_date=CASE WHEN d ? 'end_date' THEN (d->>'end_date')::timestamptz ELSE end_date END,
+            product_id=CASE WHEN d ? 'product_id' THEN NULLIF(d->>'product_id','')::integer ELSE product_id END,
+            status='active'
           WHERE id=(d->>'promo_id')::integer;
           IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='PT404', MESSAGE='Promo not found.'; END IF;
         ELSE
-          INSERT INTO public.promos(title,description,discount_type,discount_value,start_date,end_date,status,created_by)
+          INSERT INTO public.promos(title,description,discount_type,discount_value,start_date,end_date,product_id,status,created_by)
           VALUES(d->>'title',d->>'description',d->>'discount_type',(d->>'discount_value')::numeric,
-            (d->>'start_date')::timestamptz,(d->>'end_date')::timestamptz,'active',s.submitted_by);
+            (d->>'start_date')::timestamptz,(d->>'end_date')::timestamptz,NULLIF(d->>'product_id','')::integer,'active',s.submitted_by);
         END IF;
       WHEN 'stock_update' THEN
         UPDATE public.products SET

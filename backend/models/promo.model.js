@@ -19,8 +19,17 @@ const filterActivePromos = (promos = [], now = new Date()) => {
 
 const PromoModel = {
   async getAll(activeOnly = false) {
-    const promos = await db.promos.getAll();
-    const filtered = activeOnly ? filterActivePromos(promos) : promos;
+    const [promos, products] = await Promise.all([db.promos.getAll(), db.products.getAll()]);
+    const productImages = new Map(products.map(product => [product.id, {
+      name: product.name,
+      image_url: product.image_url,
+    }]));
+    const enriched = promos.map(promo => ({
+      ...promo,
+      product: promo.product_id ? productImages.get(promo.product_id) || null : null,
+      image_url: promo.product_id ? productImages.get(promo.product_id)?.image_url || null : null,
+    }));
+    const filtered = activeOnly ? filterActivePromos(enriched) : enriched;
     return filtered.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   },
 
@@ -33,15 +42,15 @@ const PromoModel = {
     return filterActivePromos(promos).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   },
 
-  async create({ title, description, discount_type, discount_value, start_date, end_date, status, created_by }) {
+  async create({ title, description, discount_type, discount_value, start_date, end_date, product_id, status, created_by }) {
     const promo = await db.promos.insert({
       title, description, discount_type, discount_value: parseFloat(discount_value),
-      start_date, end_date, status: status || 'pending', created_by
+      start_date, end_date, product_id: product_id || null, status: status || 'pending', created_by
     });
     return promo.id;
   },
 
-  async update(id, { title, description, discount_type, discount_value, start_date, end_date, status }) {
+  async update(id, { title, description, discount_type, discount_value, start_date, end_date, product_id, status }) {
     const updates = {};
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
@@ -49,6 +58,7 @@ const PromoModel = {
     if (discount_value !== undefined) updates.discount_value = parseFloat(discount_value);
     if (start_date !== undefined) updates.start_date = start_date;
     if (end_date !== undefined) updates.end_date = end_date;
+    if (product_id !== undefined) updates.product_id = product_id || null;
     if (status !== undefined) updates.status = status;
     return await db.promos.update(id, updates);
   },

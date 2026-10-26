@@ -8,7 +8,8 @@ const promoSchema = Joi.object({
   discount_type: Joi.string().valid('percentage', 'fixed', 'bundle').required(),
   discount_value: Joi.number().positive().required(),
   start_date: Joi.date().required(),
-  end_date: Joi.date().greater(Joi.ref('start_date')).required()
+  end_date: Joi.date().greater(Joi.ref('start_date')).required(),
+  product_id: Joi.number().integer().positive().allow(null).optional()
 });
 
 exports.getAll = async (req, res) => {
@@ -38,19 +39,19 @@ exports.create = async (req, res) => {
     const { error } = promoSchema.validate(req.body);
     if (error) return res.status(400).json({ message: error.details[0].message });
 
-    const { title, description, discount_type, discount_value, start_date, end_date } = req.body;
+    const { title, description, discount_type, discount_value, start_date, end_date, product_id } = req.body;
 
     if (req.user.role === 'staff') {
       const submissionId = await SubmissionModel.create({
         type: 'promo',
-        data: { title, description, discount_type, discount_value, start_date, end_date },
+        data: { title, description, discount_type, discount_value, start_date, end_date, product_id },
         submitted_by: req.user.id
       });
       return res.status(201).json({ message: 'Promo submitted for admin approval.', submissionId });
     }
 
     const promoId = await PromoModel.create({
-      title, description, discount_type, discount_value, start_date, end_date,
+      title, description, discount_type, discount_value, start_date, end_date, product_id,
       status: 'active',
       created_by: req.user.id
     });
@@ -66,18 +67,18 @@ exports.update = async (req, res) => {
     const promo = await PromoModel.getById(req.params.id);
     if (!promo) return res.status(404).json({ message: 'Promo not found.' });
 
-    const { title, description, discount_type, discount_value, start_date, end_date, status } = req.body;
+    const { title, description, discount_type, discount_value, start_date, end_date, product_id, status } = req.body;
 
     if (req.user.role === 'staff') {
       const submissionId = await SubmissionModel.create({
         type: 'promo',
-        data: { promo_id: parseInt(req.params.id), title, description, discount_type, discount_value, start_date, end_date },
+        data: { promo_id: parseInt(req.params.id), title, description, discount_type, discount_value, start_date, end_date, product_id },
         submitted_by: req.user.id
       });
       return res.json({ message: 'Update submitted for admin approval.', submissionId });
     }
 
-    const updated = await PromoModel.update(req.params.id, { title, description, discount_type, discount_value, start_date, end_date, status });
+    const updated = await PromoModel.update(req.params.id, { title, description, discount_type, discount_value, start_date, end_date, product_id, status });
     if (!updated) return res.status(500).json({ message: 'Promo update could not be saved.' });
     res.json({ message: 'Promo updated successfully.' });
   } catch (error) {
