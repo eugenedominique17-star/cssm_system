@@ -36,11 +36,11 @@ const AdminDataAPI = {
     }
     return API.get(path, config);
   },
-  post(path, body) {
-    if (!supabaseAuthEnabled) return API.post(path, body);
+  post(path, body, config = {}) {
+    if (!supabaseAuthEnabled) return API.post(path, body, config);
     const match = /^\/admin\/audit-logs\/([^/]+)\/reveal-previous-password$/.exec(path);
     if (match) return invoke('reveal-previous-password', { id: match[1], adminPassword: body?.adminPassword });
-    return API.post(path, body);
+    return API.post(path, body, config);
   },
 };
 

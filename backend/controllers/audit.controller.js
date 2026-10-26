@@ -25,7 +25,10 @@ exports.list = async (req, res) => {
 };
 
 exports.revealPreviousPassword = async (req, res) => {
-  const auditEventId = req.params.id;
+  return revealForAuditEvent(req, res, req.params.id);
+};
+
+async function revealForAuditEvent(req, res, auditEventId) {
   const adminPassword = req.body?.adminPassword;
   let auditId;
   const finish = async (outcome, details = {}) => {
@@ -51,5 +54,18 @@ exports.revealPreviousPassword = async (req, res) => {
   } catch (error) {
     if (auditId) await finish('failed', { result: 'Previous password reveal was denied.' }).catch(() => {});
     return res.status(error.status || 401).json({ message: error.status ? error.message : 'Admin authentication failed.' });
+  }
+}
+
+exports.revealPreviousPasswordForUser = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    const auditEvent = await Audit.latestPasswordChangeForUser(user.id);
+    if (!auditEvent) return res.status(404).json({ message: 'No previous password is available for this user.' });
+    return revealForAuditEvent(req, res, auditEvent.id);
+  } catch (error) {
+    console.error('Find previous password failed:', error.code || error.message);
+    return res.status(503).json({ message: 'Previous password is unavailable.' });
   }
 };

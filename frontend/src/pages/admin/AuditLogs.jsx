@@ -19,7 +19,6 @@ export default function AuditLogs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
-  const [revealedPassword, setRevealedPassword] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,17 +80,7 @@ export default function AuditLogs() {
           <Typography fontWeight={800}>{auditTitle(selected)}</Typography>
           <Typography>{selected.actor_name} · {selected.actor_role}</Typography>
           <Typography variant="body2">Started: {timestamp(selected.created_at)}<br />Finished: {timestamp(selected.finished_at)}</Typography>
-          <AuditActivityDetails entry={selected} onRevealPreviousPassword={async () => {
-            const password = window.prompt('Enter your current admin password to reveal the previous password.');
-            if (!password) return;
-            try {
-              const response = await API.post(`/admin/audit-logs/${selected.id}/reveal-previous-password`, { adminPassword: password });
-              setRevealedPassword(response.data?.previousPassword || response.data?.data?.previousPassword || 'Unavailable');
-            } catch (error) {
-              setRevealedPassword(error.response?.data?.message || 'Previous password is unavailable.');
-            }
-          }} />
-          {revealedPassword && selected?.action === 'Change password' && <Alert severity="info">Previous password: {revealedPassword}</Alert>}
+          <AuditActivityDetails entry={selected} />
           <Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>Audit ID: {selected.id}</Typography>
         </Stack>}</DialogContent>
         <DialogActions><Button onClick={() => setSelected(null)}>Close</Button></DialogActions>

@@ -55,8 +55,8 @@ const AccountAdminAPI = {
     return API.get(path, config);
   },
 
-  post(path, body) {
-    if (!supabaseAuthEnabled) return API.post(path, body);
+  post(path, body, config = {}) {
+    if (!supabaseAuthEnabled) return API.post(path, body, config);
     if (path === '/users') {
       return invoke('create-client', { data: body }).then(data => ({ data }));
     }
@@ -71,7 +71,7 @@ const AccountAdminAPI = {
     if (path === '/auth/change-password') {
       return invoke('change-password', body).then(result => ({ data: result.data }));
     }
-    return API.post(path, body);
+    return API.post(path, body, config);
   },
 
   put(path, body) {

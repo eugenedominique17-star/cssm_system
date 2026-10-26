@@ -53,4 +53,14 @@ module.exports = {
     }
     return { entries, total: count, page, pageSize: size };
   },
+  async latestPasswordChangeForUser(userId) {
+    const { data, error } = await supabase.from('audit_logs')
+      .select('id,created_at,details')
+      .eq('action', 'Change password')
+      .eq('outcome', 'succeeded')
+      .order('created_at', { ascending: false })
+      .limit(1000);
+    if (error) throw error;
+    return (data || []).find(entry => String(entry.details?.account?.id) === String(userId)) || null;
+  },
 };

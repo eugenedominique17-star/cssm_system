@@ -80,6 +80,7 @@ const AccountManagement = ({ accountRole }) => {
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [previousPassword, setPreviousPassword] = useState("");
   const [statusView, setStatusView] = useState("current");
 
   const [resetState, setResetState] = useState({
@@ -259,7 +260,24 @@ const AccountManagement = ({ accountRole }) => {
 
   const handleOpenDetails = (user) => {
     setSelectedUser(user);
+    setPreviousPassword("");
     setDetailsOpen(true);
+  };
+
+  const handleRevealPreviousPassword = async () => {
+    if (!selectedUser) return;
+    const adminPassword = window.prompt("Enter your current admin password to reveal this user's previous password.");
+    if (!adminPassword) return;
+    try {
+      const response = await API.post(
+        `/users/${selectedUser.id}/reveal-previous-password`,
+        { adminPassword },
+        { skipAuthRedirect: true },
+      );
+      setPreviousPassword(response.data?.previousPassword || "Unavailable");
+    } catch (error) {
+      setPreviousPassword(error.response?.data?.message || "Previous password is unavailable.");
+    }
   };
 
   const handleOpenReset = (user) => {
@@ -1937,6 +1955,19 @@ const AccountManagement = ({ accountRole }) => {
                     </Box>
                   </Grid>
                 )}
+                <Grid item xs={12}>
+                  <Box sx={{ p: 1.35, bgcolor: "var(--sh-page-tint)", border: "1px solid #EEF2F6", borderRadius: "10px" }}>
+                    <Typography sx={{ color: "#8CA39D", fontSize: "0.62rem", fontWeight: 750, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                      Previous Password
+                    </Typography>
+                    <Typography sx={{ mt: 0.35, color: "#355D55", fontSize: "0.78rem", fontWeight: 600, fontFamily: "monospace", overflowWrap: "anywhere" }}>
+                      {previousPassword || "********"}
+                    </Typography>
+                    <Button size="small" startIcon={<Visibility />} onClick={handleRevealPreviousPassword} sx={{ mt: 1, textTransform: "none" }}>
+                      Reveal previous password
+                    </Button>
+                  </Box>
+                </Grid>
               </Grid>
             </Box>
           )}

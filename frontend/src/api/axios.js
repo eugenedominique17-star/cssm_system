@@ -34,7 +34,7 @@ API.interceptors.response.use(
     if (error.response?.data?.code === 'PASSWORD_CHANGE_REQUIRED' && window.location.pathname !== '/change-password') {
       window.location.href = '/change-password';
     }
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 401 && !error.config?.skipAuthRedirect) {
       if (supabaseAuthEnabled) {
         supabase.auth.signOut({ scope: 'local' }).then(({ error: signOutError }) => {
           if (signOutError) console.error('Failed to clear an expired Supabase Auth session:', signOutError);
