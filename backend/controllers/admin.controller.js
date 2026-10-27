@@ -157,11 +157,11 @@ exports.approveSubmission = async (req, res) => {
 exports.getSalesReport = async (req, res) => {
   try {
     const { period = 'monthly', chart = 'sales_category', month } = req.query;
-    const validPeriods = ['weekly', 'monthly'];
+    const validPeriods = ['daily', 'weekly', 'monthly', 'custom'];
     const validCharts = ['sales_category', 'top_products', 'sales_trend'];
 
     if (!validPeriods.includes(period)) {
-      return res.status(400).json({ message: 'Invalid period. Use "weekly" or "monthly".' });
+      return res.status(400).json({ message: 'Invalid period. Use "daily", "weekly", "monthly", or "custom".' });
     }
     if (!validCharts.includes(chart)) {
       return res.status(400).json({ message: 'Invalid chart type.' });
@@ -170,9 +170,39 @@ exports.getSalesReport = async (req, res) => {
       return res.status(400).json({ message: 'Use a valid month in YYYY-MM format with the monthly period.' });
     }
 
+    let start_date;
+    let end_date;
+    if (period === 'daily') {
+      const today = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+      start_date = today;
+      end_date = today;
+    } else if (period === 'custom') {
+      ({ start_date, end_date } = req.query);
+    }
+
+    if (period === 'custom' && (!isValidReportDate(start_date) || !isValidReportDate(end_date))) {
+      return res.status(400).json({ message: 'Provide valid start_date and end_date values in YYYY-MM-DD format.' });
+    }
+
+    if (period === 'custom' && start_date > end_date) {
+      return res.status(400).json({ message: 'end_date must be on or after start_date.' });
+    }
+
     if (chart === 'sales_trend') {
-      const { start_date, end_date } = req.query;
-      if (!isValidReportDate(start_date) || !isValidReportDate(end_date)) {
+      if (period === 'daily' || period === 'custom') {
+        const rangeStart = Date.parse(`${start_date}T00:00:00.000Z`);
+        const rangeEnd = Date.parse(`${end_date}T00:00:00.000Z`);
+        const dayCount = (rangeEnd - rangeStart) / (24 * 60 * 60 * 1000) + 1;
+        if (period === 'custom' && dayCount > 366) {
+          return res.status(400).json({ message: 'The selected date range cannot exceed 366 days.' });
+        }
+      }
+      if (period !== 'daily' && period !== 'custom' && (!isValidReportDate(start_date) || !isValidReportDate(end_date))) {
         return res.status(400).json({ message: 'Provide valid start_date and end_date values in YYYY-MM-DD format.' });
       }
 
@@ -187,17 +217,17 @@ exports.getSalesReport = async (req, res) => {
       }
 
       const report = await TransactionModel.getSalesTrend(start_date, end_date);
-      return res.json({ ...report, period: 'custom', chart, start_date, end_date });
+      return res.json({ ...report, period, chart, start_date, end_date });
     }
 
     let data;
     if (chart === 'sales_category') {
-      data = await TransactionModel.getSalesByCategory(period, month);
+      data = await TransactionModel.getSalesByCategory(period, month, start_date, end_date);
     } else {
-      data = await TransactionModel.getTopProducts(period, month);
+      data = await TransactionModel.getTopProducts(period, month, start_date, end_date);
     }
 
-    const summary = await TransactionModel.getSalesSummary(period, month);
+    const summary = await TransactionModel.getSalesSummary(period, month, start_date, end_date);
 
     res.json({ data, summary, period, chart, month: month || null });
   } catch (error) {

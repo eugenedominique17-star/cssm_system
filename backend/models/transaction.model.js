@@ -15,8 +15,16 @@ const getReportDateKey = (date) => {
   return `${parts.year}-${parts.month}-${parts.day}`;
 };
 
-const getReportTransactions = async (period, month) => {
+const getReportTransactions = async (period, month, startDate, endDate) => {
   const allTransactions = await db.transactions.getAll();
+  if ((period === 'daily' || period === 'custom') && startDate && endDate) {
+    const rangeStart = Date.parse(`${startDate}T00:00:00+08:00`);
+    const rangeEnd = Date.parse(`${endDate}T00:00:00+08:00`) + DAY_MS;
+    return allTransactions.filter((transaction) => {
+      const timestamp = Date.parse(transaction.created_at);
+      return Number.isFinite(timestamp) && timestamp >= rangeStart && timestamp < rangeEnd;
+    });
+  }
   if (period === 'monthly' && month) {
     return allTransactions.filter((transaction) => {
       const date = new Date(transaction.created_at);
@@ -175,8 +183,8 @@ const TransactionModel = {
     }));
   },
 
-  async getSalesByCategory(period = 'monthly', month) {
-    const transactions = await getReportTransactions(period, month);
+  async getSalesByCategory(period = 'monthly', month, startDate, endDate) {
+    const transactions = await getReportTransactions(period, month, startDate, endDate);
     const categorySales = {};
 
     for (const t of transactions) {
@@ -199,8 +207,8 @@ const TransactionModel = {
       .sort((a, b) => b.total_sales - a.total_sales);
   },
 
-  async getTopProducts(period = 'monthly', month) {
-    const transactions = await getReportTransactions(period, month);
+  async getTopProducts(period = 'monthly', month, startDate, endDate) {
+    const transactions = await getReportTransactions(period, month, startDate, endDate);
     const productSales = {};
 
     for (const t of transactions) {
@@ -222,8 +230,8 @@ const TransactionModel = {
       .slice(0, 10);
   },
 
-  async getSalesSummary(period = 'monthly', month) {
-    const transactions = await getReportTransactions(period, month);
+  async getSalesSummary(period = 'monthly', month, startDate, endDate) {
+    const transactions = await getReportTransactions(period, month, startDate, endDate);
     const total_transactions = transactions.length;
     const total_revenue = transactions.reduce((sum, t) => sum + Number(t.total_amount || 0), 0);
 

@@ -89,11 +89,11 @@ const Reports = () => {
   const [forecastLoading, setForecastLoading] = useState(true);
   const [forecastError, setForecastError] = useState('');
 
-  const invalidMonth = period !== 'weekly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month);
+  const invalidMonth = period === 'monthly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month);
   const invalidRange = period === 'custom' && (!range.start || !range.end || range.start > range.end);
   const monthLabel = invalidMonth ? 'Selected month' : new Date(`${month}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
-  const periodLabel = period === 'weekly' ? 'Last 7 days' : period === 'custom' ? `${range.start} – ${range.end}` : monthLabel;
-  const groupedLabel = period === 'custom' ? monthLabel : periodLabel;
+  const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'Last 7 days' : period === 'custom' ? `${range.start} – ${range.end}` : monthLabel;
+  const groupedLabel = periodLabel;
 
   useEffect(() => {
     if (invalidMonth || invalidRange) {
@@ -106,10 +106,13 @@ const Reports = () => {
       setLoading(true);
       setError('');
       try {
-        const groupParams = new URLSearchParams({ period: period === 'weekly' ? 'weekly' : 'monthly' });
-        if (period !== 'weekly') groupParams.set('month', month);
-        const trendParams = new URLSearchParams({ period: 'monthly', chart: 'sales_trend' });
-        if (period === 'weekly') {
+        const groupParams = new URLSearchParams({ period });
+        const trendParams = new URLSearchParams({ period, chart: 'sales_trend' });
+        if (period === 'daily') {
+          const today = dateValue(new Date());
+          trendParams.set('start_date', today);
+          trendParams.set('end_date', today);
+        } else if (period === 'weekly') {
           const end = new Date();
           const start = new Date(end);
           start.setDate(start.getDate() - 6);
@@ -118,10 +121,13 @@ const Reports = () => {
         } else if (period === 'custom') {
           trendParams.set('start_date', range.start);
           trendParams.set('end_date', range.end);
+          groupParams.set('start_date', range.start);
+          groupParams.set('end_date', range.end);
         } else {
           const [year, monthNumber] = month.split('-').map(Number);
           trendParams.set('start_date', `${month}-01`);
           trendParams.set('end_date', `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, '0')}`);
+          groupParams.set('month', month);
         }
         const [trend, category, products] = await Promise.all([
           API.get(`/admin/reports?${trendParams}`),
@@ -245,13 +251,14 @@ const Reports = () => {
             <FormControl fullWidth size="small" sx={field}>
               <InputLabel>Period</InputLabel>
               <Select value={period} label="Period" onChange={(event) => setPeriod(event.target.value)}>
-                <MenuItem value="monthly">Monthly</MenuItem>
+                      <MenuItem value="daily">Daily</MenuItem>
+                      <MenuItem value="monthly">Monthly</MenuItem>
                 <MenuItem value="weekly">Last 7 days</MenuItem>
                 <MenuItem value="custom">Custom dates</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          {period !== 'weekly' && (
+          {period === 'monthly' && (
             <Grid item xs={12} sm={4} md={3}>
               <TextField fullWidth size="small" type="month" label={period === 'custom' ? 'Category/product month' : 'Month and year'} value={month} onChange={(event) => setMonth(event.target.value)} InputLabelProps={{ shrink: true }} error={invalidMonth} helperText={invalidMonth ? 'Choose a valid month.' : undefined} sx={field} />
             </Grid>
@@ -262,7 +269,7 @@ const Reports = () => {
               <Grid item xs={12} sm={4} md={3}><TextField fullWidth size="small" type="date" label="End date" value={range.end} onChange={(event) => setRange((current) => ({ ...current, end: event.target.value }))} InputLabelProps={{ shrink: true }} sx={field} /></Grid>
             </>
           )}
-          {period !== 'custom' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a month to update every chart and metric</Typography></Grid>}
+          {period !== 'custom' && period !== 'daily' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a month to update every chart and metric</Typography></Grid>}
         </Grid>
       </Paper>
 
