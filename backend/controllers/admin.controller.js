@@ -170,8 +170,7 @@ exports.getSalesReport = async (req, res) => {
       return res.status(400).json({ message: 'Use a valid month in YYYY-MM format with the monthly period.' });
     }
 
-    let start_date;
-    let end_date;
+    let { start_date, end_date } = req.query;
     if (period === 'daily') {
       const today = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Manila',
