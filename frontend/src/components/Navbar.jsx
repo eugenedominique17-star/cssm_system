@@ -637,13 +637,7 @@ const Navbar = ({ homepage = false }) => {
               <>
                 <Button
                   onClick={() => navigate("/login")}
-                  endIcon={
-                    <ArrowForwardRounded
-                      sx={{
-                        fontSize: "17px !important",
-                      }}
-                    />
-                  }
+                  endIcon={!homepage ? <ArrowForwardRounded sx={{ fontSize: "17px !important" }} /> : undefined}
                   sx={{
                     minHeight: 40,
 
@@ -678,7 +672,6 @@ const Navbar = ({ homepage = false }) => {
                 {homepage && (
                   <Button
                     onClick={() => navigate("/register/client")}
-                    endIcon={<ArrowForwardRounded sx={{ fontSize: "16px !important" }} />}
                     sx={{
                       minHeight: 40,
                       px: { xs: 0.8, sm: 1.2 },
