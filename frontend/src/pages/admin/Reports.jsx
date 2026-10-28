@@ -26,6 +26,8 @@ const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP
 const number = new Intl.NumberFormat('en-PH');
 
 const dateValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const minimumReportDate = '2026-01-01';
+const minimumReportMonth = '2026-01';
 const initialRange = () => {
   const end = new Date();
   const start = new Date(end);
@@ -92,8 +94,13 @@ const Reports = () => {
   const [losses, setLosses] = useState([]);
   const [lossRefresh, setLossRefresh] = useState(0);
 
-  const invalidMonth = period === 'monthly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month);
-  const invalidRange = period === 'custom' && (!range.start || !range.end || range.start > range.end);
+  const invalidMonth = period === 'monthly'
+    && (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || month < minimumReportMonth);
+  const invalidRange = period === 'custom' && (
+    !range.start || !range.end
+    || range.start < minimumReportDate || range.end < minimumReportDate
+    || range.start > range.end
+  );
   const monthLabel = invalidMonth ? 'Selected month' : new Date(`${month}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
   const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'Last 7 days' : period === 'custom' ? `${range.start} – ${range.end}` : monthLabel;
   const groupedLabel = periodLabel;
@@ -291,20 +298,20 @@ const Reports = () => {
           </Grid>
           {period === 'monthly' && (
             <Grid item xs={12} sm={4} md={3}>
-              <TextField fullWidth size="small" type="month" label={period === 'custom' ? 'Category/product month' : 'Month and year'} value={month} onChange={(event) => setMonth(event.target.value)} InputLabelProps={{ shrink: true }} error={invalidMonth} helperText={invalidMonth ? 'Choose a valid month.' : undefined} sx={field} />
+              <TextField fullWidth size="small" type="month" label="Month and year" value={month} onChange={(event) => setMonth(event.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: minimumReportMonth }} error={invalidMonth} helperText={invalidMonth ? 'Choose January 2026 or a later month and year.' : undefined} sx={field} />
             </Grid>
           )}
           {period === 'custom' && (
             <>
-              <Grid item xs={12} sm={4} md={3}><TextField fullWidth size="small" type="date" label="Start date" value={range.start} onChange={(event) => setRange((current) => ({ ...current, start: event.target.value }))} InputLabelProps={{ shrink: true }} sx={field} /></Grid>
-              <Grid item xs={12} sm={4} md={3}><TextField fullWidth size="small" type="date" label="End date" value={range.end} onChange={(event) => setRange((current) => ({ ...current, end: event.target.value }))} InputLabelProps={{ shrink: true }} sx={field} /></Grid>
+              <Grid item xs={12} sm={4} md={3}><TextField fullWidth size="small" type="date" label="Start date" value={range.start} onChange={(event) => setRange((current) => ({ ...current, start: event.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ min: minimumReportDate }} sx={field} /></Grid>
+              <Grid item xs={12} sm={4} md={3}><TextField fullWidth size="small" type="date" label="End date" value={range.end} onChange={(event) => setRange((current) => ({ ...current, end: event.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ min: minimumReportDate }} sx={field} /></Grid>
             </>
           )}
           {period !== 'custom' && period !== 'daily' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a month to update every chart and metric</Typography></Grid>}
         </Grid>
       </Paper>
 
-      {invalidRange && <Alert severity="error" sx={{ mb: 2 }}>End date must be the same as or later than start date.</Alert>}
+      {invalidRange && <Alert severity="error" sx={{ mb: 2 }}>Choose dates from January 1, 2026 onward, and make sure the end date is the same as or later than the start date.</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {loading ? <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 320 }}><CircularProgress sx={{ color: cyan }} /></Box> : reports && (
         <>
