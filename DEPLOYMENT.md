@@ -64,6 +64,10 @@ Use a separate staging database with the existing separated account tables and
 all repository migrations applied in order. Apply
 `supabase/migrations/20261018120749_atomic_submission_reviews.sql` before deploying
 this backend. It adds a service-role-only RPC; approval fails closed if missing.
+Also apply `supabase/migrations/20261028090000_automatic_reorders.sql`. It creates
+one automatic 50-unit reorder when a successful stock write brings a product to
+exactly 10 units. The order is marked `ordered`, but stock is increased only
+when an admin or staff member marks the delivery as received.
 Do not run old setup/reset scripts against production. Historical SQL scripts
 include permissive policies; review actual live RLS and grants before launch.
 

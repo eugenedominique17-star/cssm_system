@@ -199,6 +199,30 @@ const readHistory = async (actor: Actor, body: Record<string, unknown>) => {
   return { status: 200, body: { entries: data, total: count } };
 };
 
+const readReorders = async () => {
+  const { data, error } = await admin!.rpc("inventory_reorder_orders");
+  if (error) throw error;
+  return { entries: data || [] };
+};
+
+const receiveReorder = async (actor: Actor, body: Record<string, unknown>, origin: string) => {
+  if (!isUuid(body.id) || (body.expiry_date !== null && body.expiry_date !== undefined && !isDate(body.expiry_date))) {
+    return response(origin, 400, { message: "Invalid reorder reference or expiry date." });
+  }
+  const { data, error } = await admin!.rpc("inventory_receive_reorder", {
+    p_id: body.id,
+    p_expiry_date: body.expiry_date || null,
+    p_actor: actor.id,
+    p_role: actor.role,
+  });
+  if (error) {
+    const code = error.code || "";
+    const status = /^PT(400|403|404|409)$/.test(code) ? Number(code.slice(2)) : 503;
+    return response(origin, status, { message: error.message || "Unable to receive reorder." });
+  }
+  return response(origin, 200, { reorderId: data, message: "Reorder received. 50 units were added to stock." });
+};
+
 const readRequests = async (actor: Actor, body: Record<string, unknown>) => {
   if (!admin) throw new Error("Supabase service is not configured.");
   const page = body.page === undefined ? 0 : Number(body.page);
@@ -436,6 +460,8 @@ Deno.serve(async request => {
       const result = await readRequests(actor, body);
       return response(origin, result.status, result.body);
     }
+    if (body.action === "reorders") return response(origin, 200, await readReorders());
+    if (body.action === "receive_reorder") return await receiveReorder(actor, body, origin);
     if (body.action === "command") return await runCommand(actor, body, origin);
     return response(origin, 400, { message: "Unsupported inventory request." });
   } catch (error) {

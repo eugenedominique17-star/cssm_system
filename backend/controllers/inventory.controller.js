@@ -112,3 +112,35 @@ exports.requests = async (req,res) => {
     res.json({entries:data,total:count});
   } catch(error) {failure(res,error);}
 };
+
+exports.reorders = async (_req, res) => {
+  try {
+    const { data, error } = await supabase.rpc('inventory_reorder_orders');
+    if (error) throw error;
+    res.json({ entries: data || [] });
+  } catch (error) {
+    failure(res, error);
+  }
+};
+
+exports.receiveReorder = async (req, res) => {
+  const input = Joi.object({
+    expiry_date: date,
+  }).validate(req.body || {});
+  if (input.error) return res.status(400).json({ message: input.error.details[0].message });
+  if (!req.params.id || !/^[0-9a-f-]{36}$/i.test(req.params.id)) {
+    return res.status(400).json({ message: 'Invalid reorder reference.' });
+  }
+  try {
+    const { data, error } = await supabase.rpc('inventory_receive_reorder', {
+      p_id: req.params.id,
+      p_expiry_date: input.value.expiry_date || null,
+      p_actor: req.user.id,
+      p_role: req.user.role,
+    });
+    if (error) throw error;
+    res.json({ reorderId: data, message: 'Reorder received. 50 units were added to stock.' });
+  } catch (error) {
+    failure(res, error);
+  }
+};

@@ -4,6 +4,7 @@ import { AddRounded, Inventory2Rounded, MoreVertRounded, RefreshRounded, History
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/inventory';
 import StockRequests from '../../components/StockRequests';
+import ReorderOrders from '../../components/ReorderOrders';
 import { useAuth } from '../../contexts/AuthContext';
 import { philippineDate } from '../../utils/expiry.mjs';
 import { inventoryRows, stockLabels, movementLabels } from '../../utils/inventory.mjs';
@@ -21,6 +22,7 @@ export default function Inventory() {
   const [form, setForm] = useState(null); const [formError, setFormError] = useState(''); const [saving, setSaving] = useState(false);
   const [detailId, setDetailId] = useState(null); const [menu, setMenu] = useState(null);
   const [requestsOpen, setRequestsOpen] = useState(false);
+  const [reordersOpen, setReordersOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false); const [historyPage, setHistoryPage] = useState(0);
   const [history, setHistory] = useState({ entries: [], total: 0 }); const [historyError, setHistoryError] = useState(''); const [historyLoading, setHistoryLoading] = useState(false);
   const busy = useRef(false); const pending = useRef(null); const version = useRef(0);
@@ -72,6 +74,7 @@ export default function Inventory() {
       <Stack direction="row" spacing={0} sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(4, max-content)' }, gap: 1, alignItems: 'center' }}>
         <IconButton aria-label="Refresh inventory" disabled={loading || saving} onClick={load} sx={{ width: { xs: '100%', sm: 40 }, height: 40, border: { xs: '1px solid', sm: 0 }, borderColor: 'divider', borderRadius: 2 }}><RefreshRounded /></IconButton>
         <Button onClick={() => setRequestsOpen(true)} sx={{ minWidth: 0, minHeight: 40, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: 'inherit' }, lineHeight: 1.2 }}>{admin ? 'Stock Requests' : 'My Requests'}</Button>
+        <Button onClick={() => setReordersOpen(true)} sx={{ minWidth: 0, minHeight: 40, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: 'inherit' }, lineHeight: 1.2 }}>Auto Reorders</Button>
         <Button startIcon={<HistoryRounded />} onClick={() => { setDetailId(null); setHistoryPage(0); setHistoryOpen(true); }} sx={{ minWidth: 0, minHeight: 40, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: 'inherit' }, lineHeight: 1.2 }}>History</Button>
         <Button variant="contained" startIcon={<AddRounded />} disabled={!writable} onClick={() => admin ? open('create_product') : navigate('/staff/products')} sx={{ minWidth: 0, minHeight: 40, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: 'inherit' }, lineHeight: 1.2 }}>Add Product</Button>
       </Stack>
@@ -99,6 +102,7 @@ export default function Inventory() {
       </TableBody></Table></TableContainer><TablePagination component="div" count={visible.length} page={currentPage} rowsPerPage={pageSize} rowsPerPageOptions={[10, 25, 50]} onPageChange={(_, value) => setPage(value)} onRowsPerPageChange={e => { setPageSize(Number(e.target.value)); setPage(0); }} />
     </Paper>
     <StockRequests open={requestsOpen} onClose={() => setRequestsOpen(false)} onSaved={load} admin={admin} ready={data.approvalReady} />
+    <ReorderOrders open={reordersOpen} onClose={() => setReordersOpen(false)} admin={admin} onSaved={async message => { setSuccess(message); await load(); }} />
     <Menu anchorEl={menu?.anchor} open={!!menu} onClose={() => setMenu(null)}><MenuItem onClick={() => { setDetailId(menu.product.id); setMenu(null); }}>View details</MenuItem><MenuItem disabled={!writable} onClick={() => { const p = menu.product; setMenu(null); admin ? open('edit_product', p) : navigate('/staff/products'); }}>Edit product</MenuItem><MenuItem onClick={() => { setDetailId(menu.product.id); setHistoryPage(0); setHistoryOpen(true); setMenu(null); }}>Stock history</MenuItem></Menu>
     <Dialog open={!!detail && !historyOpen && !form} onClose={() => setDetailId(null)} fullWidth maxWidth="md"><DialogTitle>{detail?.name}</DialogTitle><DialogContent dividers>{detail && <Stack spacing={2}>
       <Typography>{detail.available} available · {detail.physical} total units · {detail.expired} expired</Typography><Typography variant="body2" color="text.secondary">Each restock keeps its own expiration date. Use Set expiry for a missing date, or Edit expiry to correct the date printed on the packaging. Expired units cannot be sold.</Typography>

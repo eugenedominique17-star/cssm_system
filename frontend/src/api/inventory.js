@@ -41,11 +41,16 @@ const InventoryAPI = {
         status: params.get('status') || 'all',
       });
     }
+    if (path === '/inventory/reorders') return invoke({ action: 'reorders' });
     return Promise.reject(new Error(`Unsupported inventory request: ${path}`));
   },
 
   post(path, payload) {
     if (!supabaseAuthEnabled) return API.post(path, payload);
+    if (path.startsWith('/inventory/reorders/') && path.endsWith('/receive')) {
+      const id = path.slice('/inventory/reorders/'.length, -'/receive'.length);
+      return invoke({ action: 'receive_reorder', id, ...(payload || {}) });
+    }
     const kind = path.startsWith('/inventory/') ? path.slice('/inventory/'.length) : '';
     if (!kind) return Promise.reject(new Error(`Unsupported inventory request: ${path}`));
     return invoke({ action: 'command', kind, ...payload });

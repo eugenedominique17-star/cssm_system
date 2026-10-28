@@ -4,5 +4,7 @@ const controller = require('../controllers/inventory.controller');
 router.get('/', authenticate, authorize('admin','staff'), controller.overview);
 router.get('/history', authenticate, authorize('admin','staff'), controller.history);
 router.get('/requests', authenticate, authorize('admin','staff'), controller.requests);
+router.get('/reorders', authenticate, authorize('admin','staff'), controller.reorders);
+router.post('/reorders/:id/receive', authenticate, authorize('admin','staff'), controller.receiveReorder);
 router.post('/:kind', authenticate, authorize('admin','staff'), controller.command);
 module.exports = router;
