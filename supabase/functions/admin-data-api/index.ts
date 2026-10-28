@@ -115,10 +115,34 @@ const getReport = async (params: Record<string, unknown>) => {
   const period = params.period === undefined ? "monthly" : params.period;
   const chart = params.chart === undefined ? "sales_category" : params.chart;
   const month = params.month;
+  if (chart === "damage_returns") {
+    let startDate = params.start_date;
+    let endDate = params.end_date;
+    if (period === "daily" && !startDate && !endDate) {
+      startDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+      endDate = startDate;
+    } else if (period === "monthly" && typeof month === "string" && !startDate && !endDate) {
+      const [year, monthNumber] = month.split("-").map(Number);
+      startDate = `${month}-01`;
+      endDate = `${month}-${String(new Date(Date.UTC(year, monthNumber, 0)).getUTCDate()).padStart(2, "0")}`;
+    } else if (period === "weekly" && !startDate && !endDate) {
+      const end = new Date();
+      endDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(end);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 6);
+      startDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(start);
+    }
+    if (!validDate(startDate) || !validDate(endDate) || startDate > endDate) {
+      throw Object.assign(new Error("Provide valid start_date and end_date values in YYYY-MM-DD format."), { status: 400 });
+    }
+    const { data: lossData, error } = await admin!.rpc("inventory_loss_report", { p_start: startDate, p_end: endDate });
+    if (error) throw error;
+    return lossData || [];
+  }
   if (!["weekly", "monthly"].includes(String(period))) {
     throw Object.assign(new Error('Invalid period. Use "weekly" or "monthly".'), { status: 400 });
   }
-  if (!["sales_category", "top_products", "sales_trend"].includes(String(chart))) {
+  if (!["sales_category", "top_products", "sales_trend", "damage_returns"].includes(String(chart))) {
     throw Object.assign(new Error("Invalid chart type."), { status: 400 });
   }
   if (month !== undefined && (period !== "monthly" || typeof month !== "string" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month))) {

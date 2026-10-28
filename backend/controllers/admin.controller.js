@@ -158,7 +158,7 @@ exports.getSalesReport = async (req, res) => {
   try {
     const { period = 'monthly', chart = 'sales_category', month } = req.query;
     const validPeriods = ['daily', 'weekly', 'monthly', 'custom'];
-    const validCharts = ['sales_category', 'top_products', 'sales_trend'];
+    const validCharts = ['sales_category', 'top_products', 'sales_trend', 'damage_returns'];
 
     if (!validPeriods.includes(period)) {
       return res.status(400).json({ message: 'Invalid period. Use "daily", "weekly", "monthly", or "custom".' });
@@ -190,6 +190,31 @@ exports.getSalesReport = async (req, res) => {
 
     if (period === 'custom' && start_date > end_date) {
       return res.status(400).json({ message: 'end_date must be on or after start_date.' });
+    }
+
+    if (chart === 'damage_returns') {
+      if (!start_date || !end_date) {
+        const now = new Date();
+        if (period === 'monthly' && month) {
+          const [year, monthNumber] = month.split('-').map(Number);
+          start_date = `${month}-01`;
+          end_date = `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, '0')}`;
+        } else {
+          const dateInManila = value => new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit',
+          }).format(value);
+          end_date = dateInManila(now);
+          const start = new Date(`${end_date}T00:00:00Z`);
+          start.setUTCDate(start.getUTCDate() - (period === 'daily' ? 0 : period === 'weekly' ? 6 : 29));
+          start_date = start.toISOString().slice(0, 10);
+        }
+      }
+      const { data, error } = await require('../config/supabase').rpc('inventory_loss_report', {
+        p_start: start_date,
+        p_end: end_date,
+      });
+      if (error) throw error;
+      return res.json({ data: data || [], period, chart, month: month || null, start_date, end_date });
     }
 
     if (chart === 'sales_trend') {

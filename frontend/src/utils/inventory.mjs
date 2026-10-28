@@ -1,5 +1,5 @@
 export const stockLabels = { in: 'In Stock', low: 'Low Stock', out: 'Out of Stock' };
-export const movementLabels = { create_product: 'Product Created', restock: 'Stock Added', sale: 'Stock Sold', correct: 'Stock Adjusted', remove_expired: 'Expired Stock Removed', consolidated: 'Existing Stock Combined', opening_store: 'Opening Stock', receive: 'Stock Received (legacy)', transfer: 'Stock Transfer (legacy)', reversal: 'Transfer Reversed (legacy)', adjustment: 'Stock Adjusted' };
+export const movementLabels = { create_product: 'Product Created', restock: 'Stock Added', sale: 'Stock Sold', correct: 'Stock Adjusted', remove_expired: 'Expired Stock Removed', damage: 'Damaged / Written Off', supplier_return: 'Returned to Supplier', reorder_receive: 'Automatic Reorder Received', consolidated: 'Existing Stock Combined', opening_store: 'Opening Stock', receive: 'Stock Received (legacy)', transfer: 'Stock Transfer (legacy)', reversal: 'Transfer Reversed (legacy)', adjustment: 'Stock Adjusted' };
 export function inventoryRows(products, batches, today, simpleReady = true) {
   const grouped = new Map();
   for (const batch of batches) {

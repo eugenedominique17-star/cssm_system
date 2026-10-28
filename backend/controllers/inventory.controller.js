@@ -10,6 +10,8 @@ const schemas = {
   restock: Joi.object({ product_id: integer.required(), quantity: integer.required(), expiry_date: date.required() }),
   correct: Joi.object({ batch_id: Joi.string().uuid().required(), actual_quantity: Joi.number().integer().min(0).max(1000000).required(), expected_quantity: Joi.number().integer().min(0).required(), reason: Joi.string().trim().min(3).max(500).required() }),
   remove_expired: Joi.object({ batch_id: Joi.string().uuid().required(), expected_quantity: Joi.number().integer().min(1).required(), reason: Joi.string().trim().min(3).max(500).required() }),
+  damage: Joi.object({ batch_id: Joi.string().uuid().required(), quantity: Joi.number().integer().min(1).required(), unit_cost: Joi.number().positive().precision(2).required(), reason: Joi.string().trim().min(3).max(500).required() }),
+  supplier_return: Joi.object({ batch_id: Joi.string().uuid().required(), quantity: Joi.number().integer().min(1).required(), unit_cost: Joi.number().positive().precision(2).required(), reason: Joi.string().trim().min(3).max(500).required(), supplier_reference: Joi.string().trim().max(150).allow('') }),
   create_product: Joi.object({ name: Joi.string().trim().min(2).max(200).required(), category: Joi.string().trim().min(2).max(100).required(), barcode: Joi.string().trim().max(100).allow('',null).default(null), price: Joi.number().positive().max(99999999).precision(2).required(), minimum_stock: Joi.number().integer().min(0).max(1000000).required(), quantity: Joi.number().integer().min(0).max(1000000).required(), expiry_date: date.required() }),
   edit_product: Joi.object({ product_id: integer.required(), name: Joi.string().trim().min(2).max(200).required(), category: Joi.string().trim().min(2).max(100).required(), barcode: Joi.string().trim().max(100).allow('',null).default(null), price: Joi.number().positive().max(99999999).precision(2).required(), minimum_stock: Joi.number().integer().min(0).max(1000000).required() }),
   expiry: Joi.object({ batch_id: Joi.string().uuid().required(), expiry_date: date.invalid(null).required(), expected_expiry: date.required(), reason: Joi.string().trim().min(8).max(500).required(), confirm_reactivation: Joi.boolean().default(false) }),
@@ -29,7 +31,7 @@ function failure(res, error) {
 exports.command = async (req,res) => {
   const kind = req.params.kind;
   if (!schemas[kind]) return res.status(400).json({ message: 'Invalid inventory action.' });
-  if (['approve_restock','reject_restock','adjustment','reversal','approve','reject','expiry','correct','remove_expired','create_product','edit_product'].includes(kind) && req.user.role!=='admin') return res.status(403).json({ message: 'Admin access required.' });
+  if (['approve_restock','reject_restock','adjustment','reversal','approve','reject','expiry','correct','remove_expired','create_product','edit_product','damage','supplier_return'].includes(kind) && req.user.role!=='admin') return res.status(403).json({ message: 'Admin access required.' });
   const input = Joi.object({ id: Joi.string().uuid().required(), payload: schemas[kind].required() }).validate(req.body);
   if (input.error) return res.status(400).json({ message: input.error.details[0].message });
   try {
@@ -57,12 +59,17 @@ exports.command = async (req,res) => {
       if (error) throw error;
       return res.json({ message: 'Batch expiry updated. Previous and new dates are recorded in the audit log.', inventoryId: data });
     }
+    if (['damage','supplier_return'].includes(kind)) {
+      const { data,error } = await supabase.rpc('inventory_record_loss', { p_id: input.value.id, p_kind: kind, p_payload: input.value.payload, p_actor: req.user.id, p_role: req.user.role });
+      if(error) throw error;
+      return res.json({message: kind === 'damage' ? 'Damage recorded and stock removed.' : 'Supplier return recorded and stock removed.', inventoryId:data});
+    }
     const { data,error } = await supabase.rpc('inventory_command', { p_id: input.value.id, p_kind: kind, p_payload: input.value.payload, p_actor: req.user.id, p_role: req.user.role });
     if (error) throw error;
     res.json({ message: kind==='delivery' ? 'Delivery submitted for admin approval.' : 'Inventory action completed.', inventoryId: data });
   } catch (error) { failure(res,error); }
 };
-exports.overview = async (_req,res) => {
+exports.overview = async (req,res) => {
   try {
     // Explicit paging avoids Supabase's default row cap silently hiding stock.
     const all = async (table, columns, order) => {

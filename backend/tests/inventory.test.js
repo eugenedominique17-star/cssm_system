@@ -46,6 +46,21 @@ test('only admins can receive reorder deliveries with an actual purchase price',
  const denied=response();await api.receiveReorder({params:{id},user:{id:2,role:'staff'},body:{purchase_price:35.5}},denied);assert.equal(denied.statusCode,403);
  const allowed=response();await api.receiveReorder({params:{id},user:{id:1,role:'admin'},body:{purchase_price:35.5}},allowed);assert.equal(allowed.statusCode,200);
 });
+test('damage and supplier return are admin-only inventory actions',async()=>{
+ const api=load('controllers/inventory.controller.js',{'../config/supabase':{rpc:async()=>({data:id})}});
+ for(const kind of ['damage','supplier_return']){
+  const res=response();await api.command(req(kind,{batch_id:id,quantity:1,unit_cost:35,reason:'Verified count'},'staff'),res);assert.equal(res.statusCode,403);
+ }
+});
+test('admin damage and supplier return use atomic loss RPC with validated actual cost',async()=>{
+ let calls=0;
+ const api=load('controllers/inventory.controller.js',{'../config/supabase':{rpc:async(name,args)=>{calls++;assert.equal(name,'inventory_record_loss');assert.equal(args.p_role,'admin');assert.equal(args.p_payload.unit_cost,35);return {data:id};}}});
+ for(const kind of ['damage','supplier_return']){
+  const res=response();await api.command(req(kind,{batch_id:id,quantity:1,unit_cost:35,reason:'Verified supplier issue'},'admin'),res);assert.equal(res.statusCode,200);
+ }
+ assert.equal(calls,2);
+ const invalid=response();await api.command(req('damage',{batch_id:id,quantity:1,unit_cost:0,reason:'bad'},'admin'),invalid);assert.equal(invalid.statusCode,400);
+});
 test('product lists and low-stock alerts exclude expired store quantities while preserving physical totals',async()=>{
  const model=load('models/product.model.js',{'../config/db':{db:{products:{getAll:async()=>[{id:1,name:'Milk',stock:20,status:'active'}]}}},'../config/supabase':{rpc:async()=>({data:[{product_id:1,available_stock:3}]})}});
  const products=await model.getAll(true);

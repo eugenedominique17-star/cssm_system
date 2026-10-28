@@ -117,6 +117,13 @@ const validatePayload = (kind: string, payload: Record<string, unknown>) => {
     case "remove_expired":
       return isUuid(payload.batch_id) && isInteger(payload.expected_quantity, 1)
         && isText(payload.reason, 3, 500);
+    case "damage":
+      return isUuid(payload.batch_id) && isInteger(payload.quantity, 1)
+        && isPositiveMoney(payload.unit_cost) && isText(payload.reason, 3, 500);
+    case "supplier_return":
+      return isUuid(payload.batch_id) && isInteger(payload.quantity, 1)
+        && isPositiveMoney(payload.unit_cost) && isText(payload.reason, 3, 500)
+        && (payload.supplier_reference === undefined || (typeof payload.supplier_reference === "string" && payload.supplier_reference.length <= 150));
     case "create_product":
       return isText(payload.name, 2, 200) && isText(payload.category, 2, 100)
         && (payload.barcode == null || (typeof payload.barcode === "string" && payload.barcode.length <= 100))
@@ -261,6 +268,8 @@ const auditedKinds = new Set([
   "restock",
   "correct",
   "remove_expired",
+  "damage",
+  "supplier_return",
   "create_product",
   "edit_product",
   "approve_restock",
@@ -296,6 +305,8 @@ const runCommand = async (actor: Actor, body: Record<string, unknown>, origin: s
     restock: actor.role === "staff" ? "Restock submitted for admin approval. Available stock is unchanged." : "Stock added successfully.",
     correct: "Stock count corrected.",
     remove_expired: "Expired stock removed.",
+    damage: "Damage recorded and stock removed.",
+    supplier_return: "Supplier return recorded and stock removed.",
     create_product: "Product created successfully.",
     edit_product: "Product details updated.",
     approve_restock: "Stock request approved. Stock has been added.",
@@ -357,6 +368,14 @@ const runCommand = async (actor: Actor, body: Record<string, unknown>, origin: s
     });
   } else if (["restock", "correct", "remove_expired", "create_product", "edit_product"].includes(kind)) {
     result = await admin.rpc(kind === "restock" ? "inventory_submit_restock" : "inventory_simple_command", {
+      p_id: id,
+      p_kind: kind,
+      p_payload: payload,
+      p_actor: actor.id,
+      p_role: actor.role,
+    });
+  } else if (kind === "damage" || kind === "supplier_return") {
+    result = await admin.rpc("inventory_record_loss", {
       p_id: id,
       p_kind: kind,
       p_payload: payload,

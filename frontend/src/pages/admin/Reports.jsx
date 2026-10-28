@@ -9,6 +9,7 @@ import {
   Legend, LineElement, LinearScale, PointElement, RadialLinearScale, Tooltip,
 } from 'chart.js';
 import API from '../../api/adminData';
+import { supabase } from '../../api/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { calculateSevenDaySalesEstimate } from '../../utils/salesForecast.mjs';
 
@@ -88,6 +89,8 @@ const Reports = () => {
   const [forecast, setForecast] = useState(null);
   const [forecastLoading, setForecastLoading] = useState(true);
   const [forecastError, setForecastError] = useState('');
+  const [losses, setLosses] = useState([]);
+  const [lossRefresh, setLossRefresh] = useState(0);
 
   const invalidMonth = period === 'monthly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month);
   const invalidRange = period === 'custom' && (!range.start || !range.end || range.start > range.end);
@@ -129,12 +132,17 @@ const Reports = () => {
           trendParams.set('end_date', `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, '0')}`);
           groupParams.set('month', month);
         }
-        const [trend, category, products] = await Promise.all([
+        const [trend, category, products, lossReport] = await Promise.all([
           API.get(`/admin/reports?${trendParams}`),
           API.get(`/admin/reports?${groupParams}&chart=sales_category`),
           API.get(`/admin/reports?${groupParams}&chart=top_products`),
+          API.get(`/admin/reports?${groupParams}&chart=damage_returns`),
         ]);
-        if (active) setReports({ trend: trend.data, category: category.data, products: products.data });
+        if (active) {
+          setReports({ trend: trend.data, category: category.data, products: products.data });
+          const rows = lossReport.data;
+          setLosses(Array.isArray(rows) ? rows : rows?.data || []);
+        }
       } catch (fetchError) {
         if (active) {
           setReports(null);
@@ -146,7 +154,22 @@ const Reports = () => {
     };
     load();
     return () => { active = false; };
-  }, [period, month, range.start, range.end, invalidMonth, invalidRange]);
+  }, [period, month, range.start, range.end, invalidMonth, invalidRange, lossRefresh]);
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+    const channel = supabase.channel('admin-loss-reports')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_loss_records' }, () => {
+        setLossRefresh(current => current + 1);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setLossRefresh(current => current + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -202,6 +225,14 @@ const Reports = () => {
       ? `${revenueChange > 0 ? '+' : ''}${revenueChange.toFixed(1)}%`
       : 'No previous sales to compare';
   const itemsSold = products.reduce((sum, product) => sum + Number(product.total_quantity || 0), 0);
+  const damageRows = losses.filter(row => row.kind === 'damage');
+  const returnRows = losses.filter(row => row.kind === 'supplier_return');
+  const lossTotals = rows => ({
+    quantity: rows.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
+    cost: rows.reduce((sum, row) => sum + Number(row.total_cost || 0), 0),
+  });
+  const damageTotals = lossTotals(damageRows);
+  const returnTotals = lossTotals(returnRows);
   const leadingCategory = categories[0];
   const categoryTotal = categories.reduce((sum, category) => sum + Number(category.total_sales || 0), 0);
   const leadingShare = categoryTotal ? Math.round(Number(leadingCategory?.total_sales || 0) / categoryTotal * 100) : 0;
@@ -284,6 +315,11 @@ const Reports = () => {
                   {dailyValues.some(Boolean) ? <Bar data={dailyBarData} options={cartesianOptions} /> : <Empty />}
                 </Box>
               </Panel>
+            </Grid>
+
+            <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+              <Grid item xs={12} md={6}><Panel title="Damaged / Write-off" note={periodLabel}><Stack spacing={1}><Typography sx={{ fontSize: 24, fontWeight: 700, color: '#B54708' }}>{number.format(damageTotals.quantity)} units</Typography><Typography sx={{ color: muted, fontSize: 12 }}>Actual purchase-cost loss: {money.format(damageTotals.cost)}</Typography>{damageRows.map(row => <Box key={row.id}><Typography sx={{ fontSize: 12, color: ink }}>{row.product_name} · {row.batch_code}: {number.format(row.quantity)} units · {money.format(row.total_cost)}</Typography><Typography sx={{ fontSize: 10, color: muted }}>{row.reason} · {new Date(row.created_at).toLocaleString('en-PH')}</Typography></Box>)}{!damageRows.length && <Typography sx={{ color: muted, fontSize: 12 }}>No damage recorded for this period.</Typography>}</Stack></Panel></Grid>
+              <Grid item xs={12} md={6}><Panel title="Supplier Returns" note={periodLabel}><Stack spacing={1}><Typography sx={{ fontSize: 24, fontWeight: 700, color: cyan }}>{number.format(returnTotals.quantity)} units</Typography><Typography sx={{ color: muted, fontSize: 12 }}>Actual purchase value returned: {money.format(returnTotals.cost)}</Typography>{returnRows.map(row => <Box key={row.id}><Typography sx={{ fontSize: 12, color: ink }}>{row.product_name} · {row.batch_code}: {number.format(row.quantity)} units · {money.format(row.total_cost)}</Typography><Typography sx={{ fontSize: 10, color: muted }}>{row.reason}{row.supplier_reference ? ` · Ref: ${row.supplier_reference}` : ''} · {new Date(row.created_at).toLocaleString('en-PH')}</Typography></Box>)}{!returnRows.length && <Typography sx={{ color: muted, fontSize: 12 }}>No supplier returns recorded for this period.</Typography>}</Stack></Panel></Grid>
             </Grid>
             <Grid item xs={12} md={5}>
               <Panel title="Sales by category" note={groupedLabel}>
