@@ -212,6 +212,9 @@ const execute = async (actor: Actor, body: Record<string, unknown>, origin: stri
   if (updating || operation === "delete") {
     if (!isIntegerId(Number(id))) return response(origin, 400, { message: "A valid record ID is required." });
   }
+  if (actor.role === "staff" && table === "products" && updating && data.price !== undefined) {
+    return response(origin, 403, { message: "Only admins can edit product prices." });
+  }
   if (operation === "delete" && actor.role !== "admin") {
     return response(origin, 403, { message: "Admin access required." });
   }

@@ -35,6 +35,12 @@ test('legacy product updates cannot overwrite stock',async()=>{
  const api=load('controllers/product.controller.js',{'../models/product.model':{getById:async()=>({id:1,stock:20}),update:()=>assert.fail('Must not overwrite')},'../models/submission.model':{create:()=>assert.fail('Must not submit old stock path')}});
  const res=response();await api.update({params:{id:1},user:{id:2,role:'staff'},body:{stock:50}},res);assert.equal(res.statusCode,409);
 });
+test('staff cannot edit product prices',async()=>{
+ const api=load('controllers/product.controller.js',{'../models/product.model':{getById:async()=>({id:1,stock:20}),update:()=>assert.fail('Must not update price')},'../models/submission.model':{create:()=>assert.fail('Must not submit price change')}});
+ const res=response();await api.update({params:{id:1},user:{id:2,role:'staff'},body:{name:'Milk',description:'',price:99,category:'Dairy'}},res);
+ assert.equal(res.statusCode,403);
+ assert.equal(res.body.message,'Only admins can edit product prices.');
+});
 test('product lists and low-stock alerts exclude expired store quantities while preserving physical totals',async()=>{
  const model=load('models/product.model.js',{'../config/db':{db:{products:{getAll:async()=>[{id:1,name:'Milk',stock:20,status:'active'}]}}},'../config/supabase':{rpc:async()=>({data:[{product_id:1,available_stock:3}]})}});
  const products=await model.getAll(true);

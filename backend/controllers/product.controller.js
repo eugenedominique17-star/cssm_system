@@ -75,6 +75,9 @@ exports.update = async (req, res) => {
     }
 
     if (req.user.role === 'staff') {
+      if (price !== undefined) {
+        return res.status(403).json({ message: 'Only admins can edit product prices.' });
+      }
       const submissionId = await SubmissionModel.create({
         type: 'stock_update',
         data: {

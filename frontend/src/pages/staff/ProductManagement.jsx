@@ -4,8 +4,11 @@ import { Add, Edit, Delete, Inventory, Search } from '@mui/icons-material';
 import API from '../../api/catalogMutations';
 import { getCatalog } from '../../api/catalog';
 import { colors } from '../../theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ProductManagement = () => {
+  const { user } = useAuth();
+  const isStaff = user?.role === 'staff';
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -51,7 +54,7 @@ const ProductManagement = () => {
       const payload = {
         name: formData.name,
         description: formData.description,
-        price: parseFloat(formData.price),
+        ...(!editProduct || !isStaff ? { price: parseFloat(formData.price) } : {}),
         ...(!editProduct ? { stock: 0 } : {}),
         category: formData.category,
       };
@@ -335,7 +338,17 @@ const ProductManagement = () => {
         <DialogContent>
           <TextField fullWidth label="Product Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} sx={{ mt: 2, mb: 2 }} required />
           <TextField fullWidth label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} sx={{ mb: 2 }} multiline rows={2} />
-          <TextField fullWidth label="Price" type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} sx={{ mb: 2 }} required />
+          <TextField
+            fullWidth
+            label="Price"
+            type="number"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            sx={{ mb: 2 }}
+            required
+            disabled={Boolean(editProduct && isStaff)}
+            helperText={editProduct && isStaff ? 'Only admins can edit product prices.' : undefined}
+          />
           <Alert severity="info" sx={{ mb: 2 }}>New products start at zero stock. Use Inventory to restock products and set expiration dates in View Details.</Alert>
           <TextField fullWidth label="Category" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} sx={{ mb: 2 }} required />
           <TextField
