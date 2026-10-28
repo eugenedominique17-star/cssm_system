@@ -10,6 +10,7 @@ export default function ReorderOrders({ open, onClose, onSaved, admin }) {
   const [error, setError] = useState('');
   const [receive, setReceive] = useState(null);
   const [expiry, setExpiry] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
   const load = useCallback(async () => {
@@ -23,7 +24,7 @@ export default function ReorderOrders({ open, onClose, onSaved, admin }) {
     event.preventDefault(); if (busy.current) return;
     busy.current = true; setSaving(true); setError('');
     try {
-      const { data } = await API.post(`/inventory/reorders/${receive.id}/receive`, { expiry_date: expiry || null });
+      const { data } = await API.post(`/inventory/reorders/${receive.id}/receive`, { expiry_date: expiry || null, purchase_price: Number(purchasePrice) });
       setReceive(null); setExpiry(''); await load(); await onSaved(data.message);
     } catch (err) { setError(err.response?.data?.message || 'Unable to receive this reorder.'); }
     finally { busy.current = false; setSaving(false); }
@@ -39,7 +40,7 @@ export default function ReorderOrders({ open, onClose, onSaved, admin }) {
             <TableCell><Typography fontWeight={700}>{entry.product_name}</Typography><Typography variant="caption">Stock trigger: {entry.triggered_stock}</Typography></TableCell>
             <TableCell>+{entry.quantity} units</TableCell><TableCell>{entry.triggered_stock}</TableCell><TableCell>{dateTime(entry.created_at)}</TableCell>
             <TableCell><Chip size="small" color={entry.status === 'received' ? 'success' : entry.status === 'ordered' ? 'warning' : 'default'} label={entry.status === 'ordered' ? 'Ordered' : entry.status === 'received' ? 'Received' : 'Cancelled'} /></TableCell>
-            <TableCell>{admin && entry.status === 'ordered' && <Button onClick={() => { setReceive(entry); setExpiry(''); setError(''); }}>Mark Received</Button>}</TableCell>
+            <TableCell>{admin && entry.status === 'ordered' && <Button onClick={() => { setReceive(entry); setExpiry(''); setPurchasePrice(''); setError(''); }}>Mark Received</Button>}</TableCell>
           </TableRow>)}
           {!loading && !entries.length && <TableRow><TableCell colSpan={6} align="center">No automatic reorders.</TableCell></TableRow>}
         </TableBody></Table></TableContainer>
@@ -49,7 +50,8 @@ export default function ReorderOrders({ open, onClose, onSaved, admin }) {
       <form onSubmit={confirmReceive}><DialogTitle>Receive Automatic Reorder</DialogTitle><DialogContent dividers><Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
         <Typography>{receive?.product_name} · +{receive?.quantity} units</Typography>
-        <Alert severity="warning">Confirm only after the supplier delivery is physically received. Stock will increase by 50 units.</Alert>
+        <Alert severity="warning">Enter the actual supplier invoice price. Stock will increase by 50 units only after the delivery and price are confirmed.</Alert>
+        <TextField required label="Actual purchase price per unit" type="number" value={purchasePrice} onChange={e => setPurchasePrice(e.target.value)} disabled={saving} inputProps={{ min: 0.01, step: 0.01 }} InputLabelProps={{ shrink: true }} />
         <TextField label="Expiry date (optional)" type="date" value={expiry} onChange={e => setExpiry(e.target.value)} disabled={saving} InputLabelProps={{ shrink: true }} />
       </Stack></DialogContent><DialogActions><Button disabled={saving} onClick={() => setReceive(null)}>Cancel</Button><Button type="submit" variant="contained" disabled={saving}>{saving ? 'Saving…' : 'Confirm Received'}</Button></DialogActions></form>
     </Dialog>

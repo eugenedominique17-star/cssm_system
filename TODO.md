@@ -21,4 +21,5 @@ Make the UI more pleasing to the eyes and easy to use for both elderly and young
 - [x] 14. Admin Product Monitor: new `/admin/product-monitor` page + Quick Action card — stock health summary bar, search/category/status filters, stock badges, bulk status actions (reuses PUT /products/:id), CSV export. Frontend-only, no backend changes.
 - [ ] 15. Run both SQL migrations in Supabase, restart backend, test flows
 - [x] 16. Automatic reorder workflow: create a 50-unit order when stock reaches exactly 10; receive action adds stock atomically
+- [x] 17. Actual purchase/selling price separation: admin-only purchase cost per received reorder batch
 </content>

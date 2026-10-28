@@ -67,7 +67,11 @@ this backend. It adds a service-role-only RPC; approval fails closed if missing.
 Also apply `supabase/migrations/20261028090000_automatic_reorders.sql`. It creates
 one automatic 50-unit reorder when a successful stock write brings a product to
 exactly 10 units. The order is marked `ordered`, but stock is increased only
-when an admin or staff member marks the delivery as received.
+when an admin marks the delivery as received.
+Apply `supabase/migrations/20261028094000_actual_purchase_prices.sql` after it.
+It requires the admin to enter the actual supplier invoice purchase price before
+receiving a reorder. The existing product `price` remains the selling price;
+purchase cost is stored per received batch and is not exposed to staff.
 Do not run old setup/reset scripts against production. Historical SQL scripts
 include permissive policies; review actual live RLS and grants before launch.
 

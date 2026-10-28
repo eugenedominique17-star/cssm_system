@@ -41,6 +41,11 @@ test('staff cannot edit product prices',async()=>{
  assert.equal(res.statusCode,403);
  assert.equal(res.body.message,'Only admins can edit product prices.');
 });
+test('only admins can receive reorder deliveries with an actual purchase price',async()=>{
+ const api=load('controllers/inventory.controller.js',{'../config/supabase':{rpc:async(name,args)=>{assert.equal(name,'inventory_receive_reorder');assert.equal(args.p_purchase_price,35.5);return {data:id};}}});
+ const denied=response();await api.receiveReorder({params:{id},user:{id:2,role:'staff'},body:{purchase_price:35.5}},denied);assert.equal(denied.statusCode,403);
+ const allowed=response();await api.receiveReorder({params:{id},user:{id:1,role:'admin'},body:{purchase_price:35.5}},allowed);assert.equal(allowed.statusCode,200);
+});
 test('product lists and low-stock alerts exclude expired store quantities while preserving physical totals',async()=>{
  const model=load('models/product.model.js',{'../config/db':{db:{products:{getAll:async()=>[{id:1,name:'Milk',stock:20,status:'active'}]}}},'../config/supabase':{rpc:async()=>({data:[{product_id:1,available_stock:3}]})}});
  const products=await model.getAll(true);

@@ -157,11 +157,14 @@ const validatePayload = (kind: string, payload: Record<string, unknown>) => {
   }
 };
 
-const allRows = async (table: "products" | "inventory_batches") => {
+const allRows = async (table: "products" | "inventory_batches", includePurchasePrice = false) => {
   if (!admin) throw new Error("Supabase service is not configured.");
   const rows: Record<string, unknown>[] = [];
   for (let offset = 0; ; offset += 1000) {
-    const { data, error } = await admin.from(table).select("*").order("id").range(offset, offset + 999);
+    const columns = table === "inventory_batches" && !includePurchasePrice
+      ? "id,product_id,batch_code,expiry_date,warehouse_qty,store_qty,created_at"
+      : "*";
+    const { data, error } = await admin.from(table).select(columns).order("id").range(offset, offset + 999);
     if (error) throw error;
     rows.push(...data);
     if (data.length < 1000) return rows;
@@ -206,12 +209,18 @@ const readReorders = async () => {
 };
 
 const receiveReorder = async (actor: Actor, body: Record<string, unknown>, origin: string) => {
-  if (!isUuid(body.id) || (body.expiry_date !== null && body.expiry_date !== undefined && !isDate(body.expiry_date))) {
+  if (actor.role !== "admin") {
+    return response(origin, 403, { message: "Only admins can receive reorder deliveries and record purchase prices." });
+  }
+  if (!isUuid(body.id)
+    || (body.expiry_date !== null && body.expiry_date !== undefined && !isDate(body.expiry_date))
+    || !isPositiveMoney(body.purchase_price)) {
     return response(origin, 400, { message: "Invalid reorder reference or expiry date." });
   }
   const { data, error } = await admin!.rpc("inventory_receive_reorder", {
     p_id: body.id,
     p_expiry_date: body.expiry_date || null,
+    p_purchase_price: body.purchase_price,
     p_actor: actor.id,
     p_role: actor.role,
   });
@@ -439,7 +448,7 @@ Deno.serve(async request => {
     if (body.action === "overview") {
       const [products, batches, simpleReady, approvalReady] = await Promise.all([
         allRows("products"),
-        allRows("inventory_batches"),
+        allRows("inventory_batches", actor.role === "admin"),
         admin.rpc("inventory_simple_ready"),
         admin.rpc("inventory_restock_approval_ready"),
       ]);

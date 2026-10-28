@@ -74,7 +74,8 @@ exports.overview = async (_req,res) => {
         if(data.length<1000) return rows;
       }
     };
-    const [products,batches,capability,approval]=await Promise.all([all('products','*','id'), all('inventory_batches','*','id'),supabase.rpc('inventory_simple_ready'),supabase.rpc('inventory_restock_approval_ready')]);
+    const batchColumns = req.user.role === 'admin' ? '*' : 'id,product_id,batch_code,expiry_date,warehouse_qty,store_qty,created_at';
+    const [products,batches,capability,approval]=await Promise.all([all('products','*','id'), all('inventory_batches',batchColumns,'id'),supabase.rpc('inventory_simple_ready'),supabase.rpc('inventory_restock_approval_ready')]);
     res.json({products,batches,simpleReady:capability.data===true,approvalReady:approval.data===true});
   } catch(error) { failure(res,error); }
 };
@@ -124,8 +125,12 @@ exports.reorders = async (_req, res) => {
 };
 
 exports.receiveReorder = async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Only admins can receive reorder deliveries and record purchase prices.' });
+  }
   const input = Joi.object({
     expiry_date: date,
+    purchase_price: Joi.number().positive().precision(2).required(),
   }).validate(req.body || {});
   if (input.error) return res.status(400).json({ message: input.error.details[0].message });
   if (!req.params.id || !/^[0-9a-f-]{36}$/i.test(req.params.id)) {
@@ -135,6 +140,7 @@ exports.receiveReorder = async (req, res) => {
     const { data, error } = await supabase.rpc('inventory_receive_reorder', {
       p_id: req.params.id,
       p_expiry_date: input.value.expiry_date || null,
+      p_purchase_price: input.value.purchase_price,
       p_actor: req.user.id,
       p_role: req.user.role,
     });
