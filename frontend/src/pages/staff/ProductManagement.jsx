@@ -5,6 +5,7 @@ import API from '../../api/catalogMutations';
 import { getCatalog } from '../../api/catalog';
 import { colors } from '../../theme';
 import { useAuth } from '../../contexts/AuthContext';
+import { calculateSellingPrice } from '../../utils/productPricing.mjs';
 
 const ProductManagement = () => {
   const { user } = useAuth();
@@ -13,7 +14,7 @@ const ProductManagement = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', stock: '', category: '', expiry_date: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', purchase_price: '', selling_markup_percent: '', category: '' });
   const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
   const [searchTerm, setSearchTerm] = useState('');
   const [stockFilter, setStockFilter] = useState('all'); // all | low | out
@@ -37,34 +38,40 @@ const ProductManagement = () => {
       setFormData({
         name: product.name,
         description: product.description || '',
-        price: product.price.toString(),
-        stock: product.stock.toString(),
+        purchase_price: product.purchase_price?.toString() || '',
+        selling_markup_percent: product.selling_markup_percent?.toString() || '',
         category: product.category,
-        expiry_date: product.expiry_date ? product.expiry_date.slice(0, 10) : ''
       });
     } else {
       setEditProduct(null);
-      setFormData({ name: '', description: '', price: '', stock: '', category: '', expiry_date: '' });
+      setFormData({ name: '', description: '', purchase_price: '', selling_markup_percent: '', category: '' });
     }
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     try {
+      const sellingPrice = calculateSellingPrice(formData.purchase_price, formData.selling_markup_percent);
+      if (sellingPrice === null) {
+        showAlert('Enter a valid purchase price and markup percentage.', 'error');
+        return;
+      }
       const payload = {
         name: formData.name,
         description: formData.description,
-        ...(!editProduct || !isStaff ? { price: parseFloat(formData.price) } : {}),
+        purchase_price: Number(formData.purchase_price),
+        selling_markup_percent: Number(formData.selling_markup_percent),
+        price: sellingPrice,
         ...(!editProduct ? { stock: 0 } : {}),
         category: formData.category,
       };
 
       if (editProduct) {
         await API.put(`/products/${editProduct.id}`, payload);
-        showAlert('Product update submitted for admin approval.');
+        showAlert(isStaff ? 'Product update submitted for admin approval.' : 'Product updated successfully.');
       } else {
         await API.post('/products', payload);
-        showAlert('Product submitted for admin approval.');
+        showAlert(isStaff ? 'Product submitted for admin approval.' : 'Product created successfully.');
       }
       setDialogOpen(false);
       fetchProducts();
@@ -224,12 +231,14 @@ const ProductManagement = () => {
       </Typography>
 
       <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 820 }}>
+        <Table sx={{ minWidth: 1000 }}>
           <TableHead>
             <TableRow>
               <TableCell>Product</TableCell>
               <TableCell>Category</TableCell>
-              <TableCell>Price</TableCell>
+              <TableCell>Purchase Price</TableCell>
+              <TableCell>Markup</TableCell>
+              <TableCell>Selling Price</TableCell>
               <TableCell>Stock</TableCell>
               <TableCell>Expiry</TableCell>
               <TableCell>Status</TableCell>
@@ -239,7 +248,7 @@ const ProductManagement = () => {
           <TableBody>
             {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6 }}>
+                <TableCell colSpan={9} sx={{ textAlign: 'center', py: 6 }}>
                   <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 600 }}>
                     No products found.
                   </Typography>
@@ -276,6 +285,8 @@ const ProductManagement = () => {
                     sx={{ bgcolor: 'rgba(0,168,150,0.08)', color: colors.primary, fontWeight: 600 }}
                   />
                 </TableCell>
+                <TableCell>{product.purchase_price == null ? '—' : formatPrice(product.purchase_price)}</TableCell>
+                <TableCell>{product.selling_markup_percent == null ? '—' : `${Number(product.selling_markup_percent).toFixed(2)}%`}</TableCell>
                 <TableCell>
                   <Typography variant="body2" fontWeight={700} sx={{ color: colors.primary }}>
                     {formatPrice(product.price)}
@@ -340,14 +351,34 @@ const ProductManagement = () => {
           <TextField fullWidth label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} sx={{ mb: 2 }} multiline rows={2} />
           <TextField
             fullWidth
-            label="Price"
+            label="Purchase price per unit (PHP)"
             type="number"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            value={formData.purchase_price}
+            onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
             sx={{ mb: 2 }}
             required
-            disabled={Boolean(editProduct && isStaff)}
-            helperText={editProduct && isStaff ? 'Only admins can edit product prices.' : undefined}
+            inputProps={{ min: 0.01, step: 0.01, max: 99999999 }}
+            helperText="Enter the actual supplier cost per individual unit."
+          />
+          <TextField
+            fullWidth
+            label="Selling markup (%)"
+            type="number"
+            value={formData.selling_markup_percent}
+            onChange={(e) => setFormData({ ...formData, selling_markup_percent: e.target.value })}
+            sx={{ mb: 2 }}
+            required
+            inputProps={{ min: 0, step: 0.01, max: 10000 }}
+            helperText="The markup is added to the purchase price."
+          />
+          <TextField
+            fullWidth
+            label="Selling price per unit (PHP)"
+            type="number"
+            value={calculateSellingPrice(formData.purchase_price, formData.selling_markup_percent) ?? ''}
+            sx={{ mb: 2 }}
+            InputProps={{ readOnly: true }}
+            helperText="Calculated automatically from purchase price and markup."
           />
           <Alert severity="info" sx={{ mb: 2 }}>New products start at zero stock. Use Inventory to restock products and set expiration dates in View Details.</Alert>
           <TextField fullWidth label="Category" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} sx={{ mb: 2 }} required />

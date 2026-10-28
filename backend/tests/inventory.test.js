@@ -46,6 +46,14 @@ test('only admins can receive reorder deliveries with an actual purchase price',
  const denied=response();await api.receiveReorder({params:{id},user:{id:2,role:'staff'},body:{purchase_price:35.5}},denied);assert.equal(denied.statusCode,403);
  const allowed=response();await api.receiveReorder({params:{id},user:{id:1,role:'admin'},body:{purchase_price:35.5}},allowed);assert.equal(allowed.statusCode,200);
 });
+test('inventory product pricing requires a valid purchase price and markup calculation',()=>{
+ const {schemas}=load('controllers/inventory.controller.js',{'../config/supabase':{}});
+ const payload={name:'Coffee',category:'Drinks',barcode:null,purchase_price:1000,selling_markup_percent:20,price:1200,minimum_stock:10,quantity:0,expiry_date:null};
+ assert.equal(schemas.create_product.validate(payload).error,undefined);
+ assert.ok(schemas.create_product.validate({...payload,price:1199}).error);
+ assert.ok(schemas.create_product.validate({...payload,selling_markup_percent:-1}).error);
+ assert.ok(schemas.create_product.validate({...payload,purchase_price:undefined}).error);
+});
 test('damage and supplier return are admin-only inventory actions',async()=>{
  const api=load('controllers/inventory.controller.js',{'../config/supabase':{rpc:async()=>({data:id})}});
  for(const kind of ['damage','supplier_return']){

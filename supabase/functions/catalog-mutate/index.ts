@@ -92,6 +92,14 @@ const optionalText = (value: unknown, max: number) =>
   value === undefined || value === null || (typeof value === "string" && value.length <= max);
 const isPositiveMoney = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 99_999_999;
+const calculateProductPrice = (purchasePrice: unknown, markupPercent: unknown) => {
+  if (
+    typeof purchasePrice !== "number" || !Number.isFinite(purchasePrice) || purchasePrice <= 0 || purchasePrice > 99_999_999
+    || typeof markupPercent !== "number" || !Number.isFinite(markupPercent) || markupPercent < 0 || markupPercent > 10_000
+  ) return null;
+  const price = Math.round((purchasePrice * (1 + markupPercent / 100) + Number.EPSILON) * 100) / 100;
+  return Number.isFinite(price) && price > 0 && price <= 99_999_999 ? price : null;
+};
 const isDateTime = (value: unknown) =>
   (typeof value === "string" || value instanceof Date)
   && Number.isFinite(Date.parse(String(value)));
@@ -99,15 +107,26 @@ const isStatus = (value: unknown, values: string[]) =>
   value === undefined || values.includes(String(value));
 
 const validateProduct = (data: Record<string, unknown>, create: boolean, role: Actor["role"]) => {
+  const hasPurchasePrice = data.purchase_price !== undefined;
+  const hasMarkup = data.selling_markup_percent !== undefined;
+  const calculatedPrice = calculateProductPrice(data.purchase_price, data.selling_markup_percent);
   if (create && (
     !isText(data.name, 2, 200)
     || !isText(data.category, 2, 100)
-    || !isPositiveMoney(data.price)
-  )) return "Product name, category, and positive price are required.";
+    || calculatedPrice === null
+  )) return "Product name, category, purchase price, and markup are required.";
   if (!create && Object.keys(data).length === 0) return "Product changes are required.";
+  if (hasPurchasePrice !== hasMarkup) return "Purchase price and markup must be provided together.";
+  if ((hasPurchasePrice || hasMarkup) && calculatedPrice === null) {
+    return "Enter a valid purchase price and markup percentage.";
+  }
+  if (calculatedPrice !== null && data.price !== undefined && data.price !== calculatedPrice) {
+    return "Selling price must match the purchase price and markup.";
+  }
   if (data.name !== undefined && !isText(data.name, 2, 200)) return "Product name must be 2 to 200 characters.";
   if (data.category !== undefined && !isText(data.category, 2, 100)) return "Category must be 2 to 100 characters.";
   if (data.price !== undefined && !isPositiveMoney(data.price)) return "Enter a valid positive product price.";
+  if (data.price !== undefined && !hasPurchasePrice && create) return "Purchase price and markup are required.";
   if (data.description !== undefined && !optionalText(data.description, 100_000)) return "Product description is too long.";
   if (data.image_url !== undefined && !optionalText(data.image_url, 2_000)) return "Product image URL is too long.";
   if (data.stock !== undefined && (data.stock !== 0 || !create)) {
@@ -150,7 +169,7 @@ const validatePromo = (data: Record<string, unknown>, create: boolean, role: Act
 
 const fieldsForSubmission = (resource: "products" | "promos", data: Record<string, unknown>) => {
   if (resource === "products") {
-    const fields = ["name", "description", "price", "stock", "category", "image_url", "expiry_date"];
+    const fields = ["name", "description", "price", "purchase_price", "selling_markup_percent", "stock", "category", "image_url", "expiry_date"];
     return Object.fromEntries(fields.filter(key => data[key] !== undefined).map(key => [key, data[key]]));
   }
   const fields = ["title", "description", "discount_type", "discount_value", "start_date", "end_date"];
@@ -209,10 +228,17 @@ const execute = async (actor: Actor, body: Record<string, unknown>, origin: stri
   const updating = operation === "update";
   const creating = operation === "create";
 
+  if (table === "products") {
+    const calculatedPrice = calculateProductPrice(data.purchase_price, data.selling_markup_percent);
+    if (calculatedPrice !== null) data.price = calculatedPrice;
+  }
   if (updating || operation === "delete") {
     if (!isIntegerId(Number(id))) return response(origin, 400, { message: "A valid record ID is required." });
   }
-  if (actor.role === "staff" && table === "products" && updating && data.price !== undefined) {
+  if (
+    actor.role === "staff" && table === "products" && updating && data.price !== undefined
+    && (data.purchase_price === undefined || data.selling_markup_percent === undefined)
+  ) {
     return response(origin, 403, { message: "Only admins can edit product prices." });
   }
   if (operation === "delete" && actor.role !== "admin") {
@@ -272,6 +298,8 @@ const execute = async (actor: Actor, body: Record<string, unknown>, origin: stri
           name: data.name,
           description: data.description ?? null,
           price: data.price,
+          purchase_price: data.purchase_price,
+          selling_markup_percent: data.selling_markup_percent,
           stock: 0,
           category: data.category,
           image_url: data.image_url || null,
@@ -296,7 +324,7 @@ const execute = async (actor: Actor, body: Record<string, unknown>, origin: stri
     } else if (updating) {
       const update: Record<string, unknown> = {};
       const allowedFields = table === "products"
-        ? ["name", "description", "price", "category", "image_url", "status"]
+        ? ["name", "description", "price", "purchase_price", "selling_markup_percent", "category", "image_url", "status"]
         : ["title", "description", "discount_type", "discount_value", "start_date", "end_date", "status"];
       for (const key of allowedFields) {
         if (data[key] !== undefined) update[key] = data[key];

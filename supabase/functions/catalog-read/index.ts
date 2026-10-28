@@ -82,7 +82,7 @@ const selectAll = async (table: "products" | "promos") => {
   }
 };
 
-const getProducts = async (activeOnly: boolean) => {
+const getProducts = async (activeOnly: boolean, includePricing = true) => {
   let products = await selectAll("products");
   const { data: availability, error } = await admin.rpc("inventory_available_stock");
   if (!error) {
@@ -101,6 +101,9 @@ const getProducts = async (activeOnly: boolean) => {
     console.warn("Inventory availability is unavailable; using product stock.", error.code);
   }
   if (activeOnly) products = products.filter(product => product.status === "active");
+  if (!includePricing) {
+    products = products.map(({ purchase_price: _purchasePrice, selling_markup_percent: _markup, ...product }) => product);
+  }
   return products;
 };
 
@@ -154,7 +157,7 @@ Deno.serve(async request => {
 
   try {
     if (action === "homepage") {
-      const [products, promos] = await Promise.all([getProducts(true), getPromos(true)]);
+      const [products, promos] = await Promise.all([getProducts(true, false), getPromos(true)]);
       return response(origin, 200, { products, promos });
     }
 
@@ -163,7 +166,7 @@ Deno.serve(async request => {
 
     if (action === "products") {
       return response(origin, 200, {
-        data: await getProducts(body.active === true),
+        data: await getProducts(body.active === true, true),
       });
     }
     if (action === "product" || action === "promo") {

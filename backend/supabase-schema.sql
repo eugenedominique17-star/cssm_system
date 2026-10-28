@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(200) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
+    purchase_price DECIMAL(10, 2) CHECK (purchase_price IS NULL OR purchase_price > 0),
+    selling_markup_percent DECIMAL(7, 2) CHECK (selling_markup_percent IS NULL OR selling_markup_percent BETWEEN 0 AND 10000),
     stock INTEGER NOT NULL DEFAULT 0,
     category VARCHAR(100) NOT NULL,
     image_url VARCHAR(255),

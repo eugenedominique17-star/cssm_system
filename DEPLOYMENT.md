@@ -71,11 +71,17 @@ when an admin marks the delivery as received.
 Apply `supabase/migrations/20261028094000_actual_purchase_prices.sql` after it.
 It requires the admin to enter the actual supplier invoice purchase price before
 receiving a reorder. The existing product `price` remains the selling price;
-purchase cost is stored per received batch and is not exposed to staff.
+the actual reorder purchase cost is stored per received batch.
 Apply `supabase/migrations/20261028100000_damage_supplier_returns.sql` after the
 purchase-price migration. It adds Admin-only damage/write-off and supplier-return
 records, removes stock atomically using the batch purchase cost, and publishes
 loss records through Supabase Realtime for live Inventory and Reports refreshes.
+Apply `supabase/migrations/20261028110000_product_markup_pricing.sql` after it.
+It stores a unit purchase price and markup percentage for products, calculates the
+selling price in the database, and carries staff-submitted pricing through admin
+approval. Product markup inputs are available to staff and admins; staff changes
+remain pending until an admin approves them. Reorder invoice costs remain recorded
+separately on each received batch.
 Do not run old setup/reset scripts against production. Historical SQL scripts
 include permissive policies; review actual live RLS and grants before launch.
 

@@ -3,7 +3,7 @@ const PromoModel = require('../models/promo.model');
 
 exports.getHomepageData = async (req, res) => {
   try {
-    const products = await ProductModel.getAll(true);
+    const products = await ProductModel.getAll(true, false);
     const promos = await PromoModel.getAll(true);
     res.json({ products, promos });
   } catch (error) {

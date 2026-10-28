@@ -97,8 +97,16 @@ const isDate = (value: unknown, nullable = false) => {
 };
 const isText = (value: unknown, min: number, max: number) =>
   typeof value === "string" && value.trim().length >= min && value.trim().length <= max;
-const isPositiveNumber = (value: unknown) =>
-  typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 99_999_999;
+const hasValidProductPricing = (payload: Record<string, unknown>) => {
+  const purchasePrice = payload.purchase_price;
+  const markupPercent = payload.selling_markup_percent;
+  if (
+    typeof purchasePrice !== "number" || !Number.isFinite(purchasePrice) || purchasePrice <= 0 || purchasePrice > 99_999_999
+    || typeof markupPercent !== "number" || !Number.isFinite(markupPercent) || markupPercent < 0 || markupPercent > 10_000
+  ) return false;
+  const calculatedPrice = Math.round((purchasePrice * (1 + markupPercent / 100) + Number.EPSILON) * 100) / 100;
+  return calculatedPrice > 0 && calculatedPrice <= 99_999_999 && payload.price === calculatedPrice;
+};
 
 const validatePayload = (kind: string, payload: Record<string, unknown>) => {
   switch (kind) {
@@ -127,13 +135,13 @@ const validatePayload = (kind: string, payload: Record<string, unknown>) => {
     case "create_product":
       return isText(payload.name, 2, 200) && isText(payload.category, 2, 100)
         && (payload.barcode == null || (typeof payload.barcode === "string" && payload.barcode.length <= 100))
-        && isPositiveNumber(payload.price) && isInteger(payload.minimum_stock)
+        && hasValidProductPricing(payload) && isInteger(payload.minimum_stock)
         && isInteger(payload.quantity) && isDate(payload.expiry_date, true);
     case "edit_product":
       return isInteger(payload.product_id, 1) && isText(payload.name, 2, 200)
         && isText(payload.category, 2, 100)
         && (payload.barcode == null || (typeof payload.barcode === "string" && payload.barcode.length <= 100))
-        && isPositiveNumber(payload.price) && isInteger(payload.minimum_stock);
+        && hasValidProductPricing(payload) && isInteger(payload.minimum_stock);
     case "expiry":
       return isUuid(payload.batch_id) && isDate(payload.expiry_date)
         && isDate(payload.expected_expiry, true) && isText(payload.reason, 8, 500)

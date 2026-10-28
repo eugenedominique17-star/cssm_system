@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(200) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
+    purchase_price DECIMAL(10, 2) NULL,
+    selling_markup_percent DECIMAL(7, 2) NULL,
     stock INT NOT NULL DEFAULT 0,
     category VARCHAR(100) NOT NULL,
     image_url VARCHAR(255),
