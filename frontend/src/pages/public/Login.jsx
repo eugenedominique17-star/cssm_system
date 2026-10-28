@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 import {
@@ -1497,69 +1497,6 @@ const Login = () => {
                   sign in.
                 </Typography>
               </Stack>
-            </Box>
-
-            {/* REGISTER */}
-
-            <Box component={motion.div} variants={itemVariants}>
-              <Box
-                sx={{
-                  mt: 2.8,
-
-                  pt: 2.4,
-
-                  borderTop: "1px solid #E6EFEC",
-                }}
-              >
-                <Stack
-                  direction={{
-                    xs: "column",
-                    sm: "row",
-                  }}
-                  alignItems={{
-                    xs: "flex-start",
-                    sm: "center",
-                  }}
-                  justifyContent="space-between"
-                  spacing={1.2}
-                >
-                  <Typography
-                    sx={{
-                      color: "#80928D",
-
-                      fontSize: "0.68rem",
-                    }}
-                  >
-                    New to StoreHub?
-                  </Typography>
-
-                  <Box
-                    component={motion.div}
-                    whileHover={
-                      reduceMotion
-                        ? {}
-                        : {
-                            x: 3,
-                          }
-                    }
-                  >
-                    <Link
-                      to="/register/client"
-                      style={{
-                        color: colors.primary,
-
-                        fontSize: "0.68rem",
-
-                        fontWeight: 900,
-
-                        textDecoration: "none",
-                      }}
-                    >
-                      Create client account →
-                    </Link>
-                  </Box>
-                </Stack>
-              </Box>
             </Box>
 
             {/* FOOTER */}

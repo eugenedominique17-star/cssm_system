@@ -316,16 +316,44 @@ const Reports = () => {
                 </Box>
               </Panel>
             </Grid>
-
-            <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
-              <Grid item xs={12} md={6}><Panel title="Damaged / Write-off" note={periodLabel}><Stack spacing={1}><Typography sx={{ fontSize: 24, fontWeight: 700, color: '#B54708' }}>{number.format(damageTotals.quantity)} units</Typography><Typography sx={{ color: muted, fontSize: 12 }}>Actual purchase-cost loss: {money.format(damageTotals.cost)}</Typography>{damageRows.map(row => <Box key={row.id}><Typography sx={{ fontSize: 12, color: ink }}>{row.product_name} · {row.batch_code}: {number.format(row.quantity)} units · {money.format(row.total_cost)}</Typography><Typography sx={{ fontSize: 10, color: muted }}>{row.reason} · {new Date(row.created_at).toLocaleString('en-PH')}</Typography></Box>)}{!damageRows.length && <Typography sx={{ color: muted, fontSize: 12 }}>No damage recorded for this period.</Typography>}</Stack></Panel></Grid>
-              <Grid item xs={12} md={6}><Panel title="Supplier Returns" note={periodLabel}><Stack spacing={1}><Typography sx={{ fontSize: 24, fontWeight: 700, color: cyan }}>{number.format(returnTotals.quantity)} units</Typography><Typography sx={{ color: muted, fontSize: 12 }}>Actual purchase value returned: {money.format(returnTotals.cost)}</Typography>{returnRows.map(row => <Box key={row.id}><Typography sx={{ fontSize: 12, color: ink }}>{row.product_name} · {row.batch_code}: {number.format(row.quantity)} units · {money.format(row.total_cost)}</Typography><Typography sx={{ fontSize: 10, color: muted }}>{row.reason}{row.supplier_reference ? ` · Ref: ${row.supplier_reference}` : ''} · {new Date(row.created_at).toLocaleString('en-PH')}</Typography></Box>)}{!returnRows.length && <Typography sx={{ color: muted, fontSize: 12 }}>No supplier returns recorded for this period.</Typography>}</Stack></Panel></Grid>
-            </Grid>
             <Grid item xs={12} md={5}>
               <Panel title="Sales by category" note={groupedLabel}>
                 <Box sx={{ height: chartHeight }}>
                   {categoryValues.some(Boolean) ? <Radar data={radarData} options={{ ...chartBase, scales: { r: { beginAtZero: true, angleLines: { color: '#EDF0F6' }, grid: { color: '#EDF0F6' }, pointLabels: { color: muted, font: { size: 9 } }, ticks: { display: false } } } }} /> : <Empty />}
                 </Box>
+              </Panel>
+            </Grid>
+          </Grid>
+
+          <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+            <Grid item xs={12} md={6}>
+              <Panel title="Damaged / Write-off" note={periodLabel}>
+                <Stack spacing={1}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#B54708' }}>{number.format(damageTotals.quantity)} units</Typography>
+                  <Typography sx={{ color: muted, fontSize: 12 }}>Actual purchase-cost loss: {money.format(damageTotals.cost)}</Typography>
+                  {damageRows.map(row => (
+                    <Box key={row.id} sx={{ py: 0.25 }}>
+                      <Typography sx={{ fontSize: 12, color: ink }}>{row.product_name} · {row.batch_code}: {number.format(row.quantity)} units · {money.format(row.total_cost)}</Typography>
+                      <Typography sx={{ fontSize: 10, color: muted }}>{row.reason} · {new Date(row.created_at).toLocaleString('en-PH')}</Typography>
+                    </Box>
+                  ))}
+                  {!damageRows.length && <Typography sx={{ color: muted, fontSize: 12 }}>No damage recorded for this period.</Typography>}
+                </Stack>
+              </Panel>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Panel title="Supplier Returns" note={periodLabel}>
+                <Stack spacing={1}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 700, color: cyan }}>{number.format(returnTotals.quantity)} units</Typography>
+                  <Typography sx={{ color: muted, fontSize: 12 }}>Actual purchase value returned: {money.format(returnTotals.cost)}</Typography>
+                  {returnRows.map(row => (
+                    <Box key={row.id} sx={{ py: 0.25 }}>
+                      <Typography sx={{ fontSize: 12, color: ink }}>{row.product_name} · {row.batch_code}: {number.format(row.quantity)} units · {money.format(row.total_cost)}</Typography>
+                      <Typography sx={{ fontSize: 10, color: muted }}>{row.reason}{row.supplier_reference ? ` · Ref: ${row.supplier_reference}` : ''} · {new Date(row.created_at).toLocaleString('en-PH')}</Typography>
+                    </Box>
+                  ))}
+                  {!returnRows.length && <Typography sx={{ color: muted, fontSize: 12 }}>No supplier returns recorded for this period.</Typography>}
+                </Stack>
               </Panel>
             </Grid>
           </Grid>

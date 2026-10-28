@@ -634,46 +634,67 @@ const Navbar = ({ homepage = false }) => {
                 />
               </Box>
             ) : (
-              <Button
-                onClick={() => navigate("/login")}
-                endIcon={
-                  <ArrowForwardRounded
+              <>
+                <Button
+                  onClick={() => navigate("/login")}
+                  endIcon={
+                    <ArrowForwardRounded
+                      sx={{
+                        fontSize: "17px !important",
+                      }}
+                    />
+                  }
+                  sx={{
+                    minHeight: 40,
+
+                    px: {
+                      xs: 1.7,
+                      sm: 2.1,
+                    },
+
+                    borderRadius: "11px",
+
+                    bgcolor: "#174E44",
+
+                    color: "#FFFFFF",
+
+                    textTransform: "none",
+
+                    fontSize: "0.76rem",
+
+                    fontWeight: 800,
+
+                    boxShadow: "0 7px 18px rgba(23,78,68,.16)",
+
+                    "&:hover": {
+                      bgcolor: "#066649",
+
+                      boxShadow: "0 9px 22px rgba(6,102,73,.2)",
+                    },
+                  }}
+                >
+                  Sign In
+                </Button>
+                {homepage && (
+                  <Button
+                    onClick={() => navigate("/register/client")}
+                    endIcon={<ArrowForwardRounded sx={{ fontSize: "16px !important" }} />}
                     sx={{
-                      fontSize: "17px !important",
+                      minHeight: 40,
+                      px: { xs: 0.8, sm: 1.2 },
+                      borderRadius: "11px",
+                      color: "#087F5B",
+                      textTransform: "none",
+                      fontSize: "0.76rem",
+                      fontWeight: 800,
+                      whiteSpace: "nowrap",
+                      "&:hover": { bgcolor: "rgba(8,127,91,.08)" },
                     }}
-                  />
-                }
-                sx={{
-                  minHeight: 40,
-
-                  px: {
-                    xs: 1.7,
-                    sm: 2.1,
-                  },
-
-                  borderRadius: "11px",
-
-                  bgcolor: "#174E44",
-
-                  color: "#FFFFFF",
-
-                  textTransform: "none",
-
-                  fontSize: "0.76rem",
-
-                  fontWeight: 800,
-
-                  boxShadow: "0 7px 18px rgba(23,78,68,.16)",
-
-                  "&:hover": {
-                    bgcolor: "#066649",
-
-                    boxShadow: "0 9px 22px rgba(6,102,73,.2)",
-                  },
-                }}
-              >
-                Sign In
-              </Button>
+                  >
+                    Sign Up
+                  </Button>
+                )}
+              </>
             )}
 
             {/* ================= MOBILE MENU BUTTON ================= */}
