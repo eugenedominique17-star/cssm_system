@@ -327,14 +327,39 @@ const Reports = () => {
 
           <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
             <Grid item xs={12} md={6}>
-              <Panel title="Damaged / Write-off" note={periodLabel}>
+              <Panel title="Damaged Items / Write-off" note={periodLabel}>
                 <Stack spacing={1}>
-                  <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#B54708' }}>{number.format(damageTotals.quantity)} units</Typography>
-                  <Typography sx={{ color: muted, fontSize: 12 }}>Actual purchase-cost loss: {money.format(damageTotals.cost)}</Typography>
+                  <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#B54708' }}>{number.format(damageTotals.quantity)} damaged units</Typography>
+                  <Typography sx={{ color: muted, fontSize: 12 }}>Total loss at recorded purchase cost: {money.format(damageTotals.cost)}</Typography>
                   {damageRows.map(row => (
-                    <Box key={row.id} sx={{ py: 0.25 }}>
-                      <Typography sx={{ fontSize: 12, color: ink }}>{row.product_name} · {row.batch_code}: {number.format(row.quantity)} units · {money.format(row.total_cost)}</Typography>
-                      <Typography sx={{ fontSize: 10, color: muted }}>{row.reason} · {new Date(row.created_at).toLocaleString('en-PH')}</Typography>
+                    <Box
+                      key={row.id}
+                      sx={{
+                        p: 1.25,
+                        border: '1px solid #F3E4D6',
+                        borderRadius: 2,
+                        bgcolor: '#FFFCF8',
+                      }}
+                    >
+                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={0.75}>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: ink }}>
+                            {row.product_name}
+                          </Typography>
+                          <Typography sx={{ fontSize: 10, color: muted }}>
+                            Batch {row.batch_code} · {number.format(row.quantity)} {Number(row.quantity) === 1 ? 'unit' : 'units'}
+                          </Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#B54708', whiteSpace: 'nowrap' }}>
+                          Loss: {money.format(row.total_cost)}
+                        </Typography>
+                      </Stack>
+                      <Typography sx={{ mt: 0.5, fontSize: 10, color: muted }}>
+                        Reason: {row.reason}
+                      </Typography>
+                      <Typography sx={{ fontSize: 10, color: muted }}>
+                        Recorded: {new Date(row.created_at).toLocaleString('en-PH')}
+                      </Typography>
                     </Box>
                   ))}
                   {!damageRows.length && <Typography sx={{ color: muted, fontSize: 12 }}>No damage recorded for this period.</Typography>}
