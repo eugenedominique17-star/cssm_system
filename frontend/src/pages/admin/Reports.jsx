@@ -28,6 +28,12 @@ const number = new Intl.NumberFormat('en-PH');
 const dateValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const minimumReportDate = '2026-01-01';
 const minimumReportMonth = '2026-01';
+const minimumReportYear = 2026;
+const currentYear = new Date().getFullYear();
+const reportYears = Array.from(
+  { length: Math.max(0, currentYear - minimumReportYear + 1) },
+  (_, index) => String(currentYear - index),
+);
 const initialRange = () => {
   const end = new Date();
   const start = new Date(end);
@@ -84,6 +90,7 @@ const Reports = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState('monthly');
   const [month, setMonth] = useState(() => dateValue(new Date()).slice(0, 7));
+  const [year, setYear] = useState(String(currentYear));
   const [range, setRange] = useState(initialRange);
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -96,17 +103,19 @@ const Reports = () => {
 
   const invalidMonth = period === 'monthly'
     && (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || month < minimumReportMonth);
+  const invalidYear = period === 'yearly' && !reportYears.includes(year);
   const invalidRange = period === 'custom' && (
     !range.start || !range.end
     || range.start < minimumReportDate || range.end < minimumReportDate
     || range.start > range.end
   );
   const monthLabel = invalidMonth ? 'Selected month' : new Date(`${month}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
-  const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'Last 7 days' : period === 'custom' ? `${range.start} – ${range.end}` : monthLabel;
+  const yearlyLabel = year === String(currentYear) ? `${year} year to date` : year;
+  const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'Last 7 days' : period === 'custom' ? `${range.start} – ${range.end}` : period === 'yearly' ? yearlyLabel : monthLabel;
   const groupedLabel = periodLabel;
 
   useEffect(() => {
-    if (invalidMonth || invalidRange) {
+    if (invalidMonth || invalidYear || invalidRange) {
       setReports(null);
       setLoading(false);
       return undefined;
@@ -116,8 +125,9 @@ const Reports = () => {
       setLoading(true);
       setError('');
       try {
-        const groupParams = new URLSearchParams({ period });
-        const trendParams = new URLSearchParams({ period, chart: 'sales_trend' });
+        const requestPeriod = period === 'yearly' ? 'custom' : period;
+        const groupParams = new URLSearchParams({ period: requestPeriod });
+        const trendParams = new URLSearchParams({ period: requestPeriod, chart: 'sales_trend' });
         if (period === 'daily') {
           const today = dateValue(new Date());
           trendParams.set('start_date', today);
@@ -133,6 +143,13 @@ const Reports = () => {
           trendParams.set('end_date', range.end);
           groupParams.set('start_date', range.start);
           groupParams.set('end_date', range.end);
+        } else if (period === 'yearly') {
+          const start = `${year}-01-01`;
+          const end = year === String(currentYear) ? dateValue(new Date()) : `${year}-12-31`;
+          trendParams.set('start_date', start);
+          trendParams.set('end_date', end);
+          groupParams.set('start_date', start);
+          groupParams.set('end_date', end);
         } else {
           const [year, monthNumber] = month.split('-').map(Number);
           trendParams.set('start_date', `${month}-01`);
@@ -161,7 +178,7 @@ const Reports = () => {
     };
     load();
     return () => { active = false; };
-  }, [period, month, range.start, range.end, invalidMonth, invalidRange, lossRefresh]);
+  }, [period, month, year, range.start, range.end, invalidMonth, invalidYear, invalidRange, lossRefresh]);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -291,11 +308,22 @@ const Reports = () => {
               <Select value={period} label="Period" onChange={(event) => setPeriod(event.target.value)}>
                       <MenuItem value="daily">Daily</MenuItem>
                       <MenuItem value="monthly">Monthly</MenuItem>
+                <MenuItem value="yearly">Yearly</MenuItem>
                 <MenuItem value="weekly">Last 7 days</MenuItem>
                 <MenuItem value="custom">Custom dates</MenuItem>
               </Select>
             </FormControl>
           </Grid>
+          {period === 'yearly' && (
+            <Grid item xs={12} sm={4} md={3}>
+              <FormControl fullWidth size="small" sx={field}>
+                <InputLabel>Year</InputLabel>
+                <Select value={year} label="Year" onChange={(event) => setYear(event.target.value)}>
+                  {reportYears.map((reportYear) => <MenuItem key={reportYear} value={reportYear}>{reportYear}</MenuItem>)}
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
           {period === 'monthly' && (
             <Grid item xs={12} sm={4} md={3}>
               <TextField fullWidth size="small" type="month" label="Month and year" value={month} onChange={(event) => setMonth(event.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: minimumReportMonth }} error={invalidMonth} helperText={invalidMonth ? 'Choose January 2026 or a later month and year.' : undefined} sx={field} />
@@ -307,10 +335,12 @@ const Reports = () => {
               <Grid item xs={12} sm={4} md={3}><TextField fullWidth size="small" type="date" label="End date" value={range.end} onChange={(event) => setRange((current) => ({ ...current, end: event.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ min: minimumReportDate }} sx={field} /></Grid>
             </>
           )}
-          {period !== 'custom' && period !== 'daily' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a month to update every chart and metric</Typography></Grid>}
+          {period !== 'custom' && period !== 'daily' && period !== 'yearly' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a month to update every chart and metric</Typography></Grid>}
+          {period === 'yearly' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a year to update every chart and metric</Typography></Grid>}
         </Grid>
       </Paper>
 
+      {invalidYear && <Alert severity="error" sx={{ mb: 2 }}>Choose a year from 2026 onward.</Alert>}
       {invalidRange && <Alert severity="error" sx={{ mb: 2 }}>Choose dates from January 1, 2026 onward, and make sure the end date is the same as or later than the start date.</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {loading ? <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 320 }}><CircularProgress sx={{ color: cyan }} /></Box> : reports && (
