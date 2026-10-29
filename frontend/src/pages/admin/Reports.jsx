@@ -24,10 +24,13 @@ const ink = '#343947';
 const muted = '#9CA4B3';
 const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 const number = new Intl.NumberFormat('en-PH');
+const reportMonths = [{ value: 'all', label: 'All Months' }, ...Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1).padStart(2, '0'),
+  label: new Date(2000, index, 1).toLocaleDateString('en-PH', { month: 'long' }),
+}))];
 
 const dateValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const minimumReportDate = '2026-01-01';
-const minimumReportMonth = '2026-01';
 const minimumReportYear = 2026;
 const currentYear = new Date().getFullYear();
 const firstReportYear = Math.min(minimumReportYear, currentYear - 1);
@@ -90,7 +93,7 @@ const Empty = ({ text = 'No sales for this period' }) => (
 const Reports = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState('monthly');
-  const [month, setMonth] = useState(() => dateValue(new Date()).slice(0, 7));
+  const [month, setMonth] = useState(() => String(new Date().getMonth() + 1).padStart(2, '0'));
   const [year, setYear] = useState(String(currentYear));
   const [range, setRange] = useState(initialRange);
   const [reports, setReports] = useState(null);
@@ -102,15 +105,15 @@ const Reports = () => {
   const [losses, setLosses] = useState([]);
   const [lossRefresh, setLossRefresh] = useState(0);
 
-  const invalidMonth = period === 'monthly'
-    && (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || month < minimumReportMonth);
-  const invalidYear = period === 'yearly' && !reportYears.includes(year);
+  const invalidMonth = period === 'monthly' && !/^(0[1-9]|1[0-2])$/.test(month);
+  const invalidYear = ['monthly', 'yearly'].includes(period) && !reportYears.includes(year);
   const invalidRange = period === 'custom' && (
     !range.start || !range.end
     || range.start < minimumReportDate || range.end < minimumReportDate
     || range.start > range.end
   );
-  const monthLabel = invalidMonth ? 'Selected month' : new Date(`${month}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+  const monthValue = `${year}-${month}`;
+  const monthLabel = invalidMonth ? 'Selected month' : new Date(`${monthValue}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
   const yearlyLabel = year === String(currentYear) ? `${year} year to date` : year;
   const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'Last 7 days' : period === 'custom' ? `${range.start} – ${range.end}` : period === 'yearly' ? yearlyLabel : monthLabel;
   const groupedLabel = periodLabel;
@@ -152,10 +155,10 @@ const Reports = () => {
           groupParams.set('start_date', start);
           groupParams.set('end_date', end);
         } else {
-          const [year, monthNumber] = month.split('-').map(Number);
-          trendParams.set('start_date', `${month}-01`);
-          trendParams.set('end_date', `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, '0')}`);
-          groupParams.set('month', month);
+          const [selectedYear, monthNumber] = monthValue.split('-').map(Number);
+          trendParams.set('start_date', `${monthValue}-01`);
+          trendParams.set('end_date', `${monthValue}-${String(new Date(selectedYear, monthNumber, 0).getDate()).padStart(2, '0')}`);
+          groupParams.set('month', monthValue);
         }
         const [trend, category, products, lossReport] = await Promise.all([
           API.get(`/admin/reports?${trendParams}`),
@@ -306,7 +309,18 @@ const Reports = () => {
           <Grid item xs={12} sm={4} md={3}>
             <FormControl fullWidth size="small" sx={field}>
               <InputLabel>Period</InputLabel>
-              <Select value={period} label="Period" onChange={(event) => setPeriod(event.target.value)}>
+              <Select
+                value={period}
+                label="Period"
+                onChange={(event) => {
+                  const nextPeriod = event.target.value;
+                  setPeriod(nextPeriod);
+                  if (nextPeriod === 'yearly') setMonth('all');
+                  if (nextPeriod === 'monthly' && month === 'all') {
+                    setMonth(String(new Date().getMonth() + 1).padStart(2, '0'));
+                  }
+                }}
+              >
                       <MenuItem value="daily">Daily</MenuItem>
                       <MenuItem value="monthly">Monthly</MenuItem>
                 <MenuItem value="yearly">Yearly</MenuItem>
@@ -315,7 +329,7 @@ const Reports = () => {
               </Select>
             </FormControl>
           </Grid>
-          {period === 'yearly' && (
+          {['monthly', 'yearly'].includes(period) && (
             <Grid item xs={12} sm={4} md={3}>
               <FormControl fullWidth size="small" sx={field}>
                 <InputLabel>Year</InputLabel>
@@ -325,9 +339,22 @@ const Reports = () => {
               </FormControl>
             </Grid>
           )}
-          {period === 'monthly' && (
+          {['monthly', 'yearly'].includes(period) && (
             <Grid item xs={12} sm={4} md={3}>
-              <TextField fullWidth size="small" type="month" label="Month and year" value={month} onChange={(event) => setMonth(event.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: minimumReportMonth }} error={invalidMonth} helperText={invalidMonth ? 'Choose January 2026 or a later month and year.' : undefined} sx={field} />
+              <FormControl fullWidth size="small" sx={field} error={invalidMonth}>
+                <InputLabel>Month</InputLabel>
+                <Select
+                  value={month}
+                  label="Month"
+                  onChange={(event) => {
+                    const selectedMonth = event.target.value;
+                    setMonth(selectedMonth);
+                    setPeriod(selectedMonth === 'all' ? 'yearly' : 'monthly');
+                  }}
+                >
+                  {reportMonths.map((reportMonth) => <MenuItem key={reportMonth.value} value={reportMonth.value}>{reportMonth.label}</MenuItem>)}
+                </Select>
+              </FormControl>
             </Grid>
           )}
           {period === 'custom' && (
@@ -337,7 +364,7 @@ const Reports = () => {
             </>
           )}
           {period !== 'custom' && period !== 'daily' && period !== 'yearly' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a month to update every chart and metric</Typography></Grid>}
-          {period === 'yearly' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a year to update every chart and metric</Typography></Grid>}
+          {period === 'yearly' && <Grid item xs={12} md={6}><Typography sx={{ fontSize: 11, color: muted, textAlign: { md: 'right' } }}>Choose a year and month to update every chart and metric</Typography></Grid>}
         </Grid>
       </Paper>
 
