@@ -9,7 +9,6 @@ import {
   Legend, LineElement, LinearScale, PointElement, RadialLinearScale, Tooltip,
 } from 'chart.js';
 import API from '../../api/adminData';
-import { supabase } from '../../api/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { calculateSevenDaySalesEstimate } from '../../utils/salesForecast.mjs';
 
@@ -38,6 +37,22 @@ const reportYears = Array.from(
   { length: currentYear + 2 - firstReportYear },
   (_, index) => String(currentYear + 1 - index),
 );
+const getReportGroupParams = (period, monthValue, year, range) => {
+  const requestPeriod = period === 'yearly' ? 'custom' : period;
+  const params = new URLSearchParams({ period: requestPeriod });
+
+  if (period === 'custom') {
+    params.set('start_date', range.start);
+    params.set('end_date', range.end);
+  } else if (period === 'yearly') {
+    params.set('start_date', `${year}-01-01`);
+    params.set('end_date', year === String(currentYear) ? dateValue(new Date()) : `${year}-12-31`);
+  } else if (period === 'monthly' && monthValue) {
+    params.set('month', monthValue);
+  }
+
+  return params;
+};
 const initialRange = () => {
   const end = new Date();
   const start = new Date(end);
@@ -103,7 +118,7 @@ const Reports = () => {
   const [forecastLoading, setForecastLoading] = useState(true);
   const [forecastError, setForecastError] = useState('');
   const [losses, setLosses] = useState([]);
-  const [lossRefresh, setLossRefresh] = useState(0);
+  const [lossError, setLossError] = useState('');
 
   const invalidMonth = period === 'monthly' && !/^(0[1-9]|1[0-2])$/.test(month);
   const invalidYear = ['monthly', 'yearly'].includes(period) && !reportYears.includes(year);
@@ -130,7 +145,7 @@ const Reports = () => {
       setError('');
       try {
         const requestPeriod = period === 'yearly' ? 'custom' : period;
-        const groupParams = new URLSearchParams({ period: requestPeriod });
+        const groupParams = getReportGroupParams(period, monthValue, year, range);
         const trendParams = new URLSearchParams({ period: requestPeriod, chart: 'sales_trend' });
         if (period === 'daily') {
           const today = dateValue(new Date());
@@ -145,31 +160,23 @@ const Reports = () => {
         } else if (period === 'custom') {
           trendParams.set('start_date', range.start);
           trendParams.set('end_date', range.end);
-          groupParams.set('start_date', range.start);
-          groupParams.set('end_date', range.end);
         } else if (period === 'yearly') {
           const start = `${year}-01-01`;
           const end = year === String(currentYear) ? dateValue(new Date()) : `${year}-12-31`;
           trendParams.set('start_date', start);
           trendParams.set('end_date', end);
-          groupParams.set('start_date', start);
-          groupParams.set('end_date', end);
         } else {
           const [selectedYear, monthNumber] = monthValue.split('-').map(Number);
           trendParams.set('start_date', `${monthValue}-01`);
           trendParams.set('end_date', `${monthValue}-${String(new Date(selectedYear, monthNumber, 0).getDate()).padStart(2, '0')}`);
-          groupParams.set('month', monthValue);
         }
-        const [trend, category, products, lossReport] = await Promise.all([
+        const [trend, category, products] = await Promise.all([
           API.get(`/admin/reports?${trendParams}`),
           API.get(`/admin/reports?${groupParams}&chart=sales_category`),
           API.get(`/admin/reports?${groupParams}&chart=top_products`),
-          API.get(`/admin/reports?${groupParams}&chart=damage_returns`),
         ]);
         if (active) {
           setReports({ trend: trend.data, category: category.data, products: products.data });
-          const rows = lossReport.data;
-          setLosses(Array.isArray(rows) ? rows : rows?.data || []);
         }
       } catch (fetchError) {
         if (active) {
@@ -182,22 +189,33 @@ const Reports = () => {
     };
     load();
     return () => { active = false; };
-  }, [period, month, year, range.start, range.end, invalidMonth, invalidYear, invalidRange, lossRefresh]);
+  }, [period, month, monthValue, year, range.start, range.end, invalidMonth, invalidYear, invalidRange]);
 
   useEffect(() => {
-    if (!supabase) return undefined;
-    const channel = supabase.channel('admin-loss-reports')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_loss_records' }, () => {
-        setLossRefresh(current => current + 1);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+    if (invalidMonth || invalidYear || invalidRange) {
+      setLosses([]);
+      setLossError('');
+      return undefined;
+    }
 
-  useEffect(() => {
-    const timer = setInterval(() => setLossRefresh(current => current + 1), 30000);
-    return () => clearInterval(timer);
-  }, []);
+    let active = true;
+    const loadLosses = async () => {
+      setLossError('');
+      try {
+        const params = getReportGroupParams(period, monthValue, year, range);
+        const response = await API.get(`/admin/reports?${params}&chart=damage_returns`);
+        if (active) {
+          const rows = response.data;
+          setLosses(Array.isArray(rows) ? rows : rows?.data || []);
+        }
+      } catch (fetchError) {
+        if (active) setLossError(fetchError.response?.data?.message || 'Could not load damage and return reports.');
+      }
+    };
+
+    loadLosses();
+    return () => { active = false; };
+  }, [period, month, monthValue, year, range.start, range.end, invalidMonth, invalidYear, invalidRange]);
 
   useEffect(() => {
     let active = true;
@@ -371,6 +389,7 @@ const Reports = () => {
       {invalidYear && <Alert severity="error" sx={{ mb: 2 }}>Choose one of the available report years.</Alert>}
       {invalidRange && <Alert severity="error" sx={{ mb: 2 }}>Choose dates from January 1, 2026 onward, and make sure the end date is the same as or later than the start date.</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {lossError && <Alert severity="warning" sx={{ mb: 2 }}>{lossError}</Alert>}
       {loading ? <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 320 }}><CircularProgress sx={{ color: cyan }} /></Box> : reports && (
         <>
           <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
