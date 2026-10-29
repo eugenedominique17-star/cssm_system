@@ -30,9 +30,10 @@ const minimumReportDate = '2026-01-01';
 const minimumReportMonth = '2026-01';
 const minimumReportYear = 2026;
 const currentYear = new Date().getFullYear();
+const firstReportYear = Math.min(minimumReportYear, currentYear - 1);
 const reportYears = Array.from(
-  { length: Math.max(0, currentYear - minimumReportYear + 1) },
-  (_, index) => String(currentYear - index),
+  { length: currentYear + 2 - firstReportYear },
+  (_, index) => String(currentYear + 1 - index),
 );
 const initialRange = () => {
   const end = new Date();
@@ -340,7 +341,7 @@ const Reports = () => {
         </Grid>
       </Paper>
 
-      {invalidYear && <Alert severity="error" sx={{ mb: 2 }}>Choose a year from 2026 onward.</Alert>}
+      {invalidYear && <Alert severity="error" sx={{ mb: 2 }}>Choose one of the available report years.</Alert>}
       {invalidRange && <Alert severity="error" sx={{ mb: 2 }}>Choose dates from January 1, 2026 onward, and make sure the end date is the same as or later than the start date.</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {loading ? <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 320 }}><CircularProgress sx={{ color: cyan }} /></Box> : reports && (
